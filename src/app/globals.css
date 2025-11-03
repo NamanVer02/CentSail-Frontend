@@ -86,3 +86,19 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+/* Custom select dropdown styling for dark theme */
+select {
+  color: white;
+}
+
+select option {
+  background-color: #0c504a;
+  color: white;
+  padding: 0.5rem;
+}
+
+select:focus option:checked {
+  background-color: #1a7370;
+  color: white;
+}

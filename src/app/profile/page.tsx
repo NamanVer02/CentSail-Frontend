@@ -2,9 +2,20 @@
 
 import { useRouter } from 'next/navigation'
 import { FiUser, FiMail, FiPhone, FiLogOut, FiArrowLeft, FiEdit, FiShield, FiBarChart2, FiBell, FiCreditCard } from 'react-icons/fi'
+import { firebaseAuthService } from '@/lib/services/firebaseAuthService'
 
 export default function ProfilePage() {
   const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await firebaseAuthService.signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // You could add a toast notification here for better UX
+    }
+  }
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
@@ -17,7 +28,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-20 pb-10">
+      <div className="max-w-md mx-auto px-4 pt-20 pb-24">
         <div className="flex flex-col items-center mb-8">
           <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-4 border-2 border-white/30">
             <FiUser className="text-5xl text-white" />
@@ -90,10 +101,7 @@ export default function ProfilePage() {
         </div>
 
         <button 
-          onClick={() => {
-            // Add logout functionality here
-            console.log('Logout clicked')
-          }}
+          onClick={handleLogout}
           className="w-full bg-red-500/80 hover:bg-red-500 text-white font-semibold py-3 rounded-lg flex items-center justify-center transition-colors"
         >
           <FiLogOut className="mr-2" />

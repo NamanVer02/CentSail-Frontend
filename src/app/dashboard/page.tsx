@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
 import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiUser, FiBell, FiArrowUp, FiArrowDown } from 'react-icons/fi'
+import { entryService } from '@/lib/services/entryService'
+import { auth } from '@/lib/config/firebase'
 
 export default function DashboardPage() {
   const [greeting] = useState(() => {
@@ -25,14 +27,51 @@ export default function DashboardPage() {
     { label: 'Clothes', value: 4, icon: <FiShoppingBag /> },
   ]
 
-  // Dummy recent transactions
-  const recentTransactions = [
-    { id: 1, name: 'Grocery Store', category: 'Grocery', amount: -45.20, date: '2025-10-17', icon: <FiShoppingCart /> },
-    { id: 2, name: 'Uber Ride', category: 'Taxi', amount: -12.50, date: '2025-10-16', icon: <FiSend /> },
-    { id: 3, name: 'Netflix Subscription', category: 'Entertainment', amount: -15.99, date: '2025-10-16', icon: <FiFilm /> },
-    { id: 4, name: 'Restaurant', category: 'Food', amount: -32.80, date: '2025-10-15', icon: <FiWatch /> },
-    { id: 5, name: 'Salary', category: 'Income', amount: 3500.00, date: '2025-10-15', icon: <FiTrendingUp /> },
-  ]
+  // Recent transactions from backend
+  type RecentEntry = {
+    id: string
+    title: string
+    type: string
+    amount: number
+    categoryId: string
+    date: string
+  }
+  const [recentTransactions, setRecentTransactions] = useState<RecentEntry[]>([])
+  const [loadingRecent, setLoadingRecent] = useState(false)
+
+  const waitForAuthUid = (): Promise<string> => new Promise((resolve, reject) => {
+    const unsub = auth.onAuthStateChanged((user) => {
+      unsub()
+      if (user?.uid) resolve(user.uid)
+      else reject(new Error('not authenticated'))
+    })
+  })
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      setLoadingRecent(true)
+      try {
+        let uid = auth.currentUser?.uid
+        if (!uid) {
+          try { uid = await waitForAuthUid() } catch { return }
+        }
+        const res = await entryService.getEntries({
+          userId: uid,
+          page: 1,
+          pageSize: 10,
+          sortBy: 'date',
+          sortOrder: 'desc'
+        } as any)
+        const payload: any = res.data || {}
+        const items: RecentEntry[] = Array.isArray(payload.entries) ? payload.entries : []
+        if (mounted) setRecentTransactions(items)
+      } finally {
+        setLoadingRecent(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
 
   const quickActions = [
     { icon: <FiPlus />, label: 'Add', description: 'Transaction', href: '/add' },
@@ -150,27 +189,31 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-3">
-            {recentTransactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/5 rounded-lg px-2 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-2xl text-white">
-                    {transaction.icon}
+            {loadingRecent && (
+              <div className="text-white/70 text-sm">Loading...</div>
+            )}
+            {!loadingRecent && recentTransactions.length === 0 && (
+              <div className="text-white/60 text-sm">No recent transactions</div>
+            )}
+            {!loadingRecent && recentTransactions.map((t) => (
+              <Link href={`/transactions/${t.id}`} key={t.id}>
+                <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/5 rounded-lg px-2 transition-all cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-xs text-white">
+                      {t.type === 'INCOME' ? 'IN' : 'OUT'}
+                    </div>
+                    <div>
+                      <p className="text-white font-medium text-sm">{t.title}</p>
+                      <p className="text-white/50 text-xs">{new Date(t.date).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-medium text-sm">{transaction.name}</p>
-                    <p className="text-white/50 text-xs">{transaction.category} • {transaction.date}</p>
+                  <div className="text-right">
+                    <p className={`font-bold text-base ${t.type === 'INCOME' ? 'text-green-300' : 'text-white'}`}>
+                      {t.type === 'INCOME' ? '+' : '-'}${Math.abs(t.amount).toFixed(2)}
+                    </p>
                   </div>
                 </div>
-                
-                <div className="text-right">
-                  <p className={`font-bold text-base ${transaction.amount > 0 ? 'text-green-300' : 'text-white'}`}>
-                    {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                  </p>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

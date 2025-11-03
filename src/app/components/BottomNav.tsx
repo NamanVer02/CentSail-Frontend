@@ -7,8 +7,8 @@ import { FiHome, FiBarChart2, FiPlus, FiMessageSquare, FiSettings } from 'react-
 export default function BottomNav() {
   const pathname = usePathname()
   
-  // Hide bottom nav on login, signup pages
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/chat') {
+  // Hide bottom nav on login, signup, chat, and add pages
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/chat' || pathname === '/add') {
     return null
   }
 
