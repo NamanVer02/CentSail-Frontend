@@ -200,15 +200,21 @@ export default function ProfilePage() {
 
       {/* Edit Modal */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-md">
-          <div className="w-full md:max-w-md bg-[#0c504a] text-white rounded-t-2xl md:rounded-2xl border border-white/10 p-5 pb-6">
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={cancelEdit} className="text-xl p-2 rounded-full hover:bg-white/10 transition-colors" aria-label="Close"><FiX /></button>
-              <h2 className="text-lg font-semibold">Edit Profile</h2>
-              <span className="w-10" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center md:p-4">
+          <div className="w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white rounded-t-2xl md:rounded-2xl md:max-w-md border-t border-x md:border border-white/10 shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Edit Profile</h2>
+              <button
+                onClick={cancelEdit}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Close"
+              >
+                <FiX className="text-xl" />
+              </button>
             </div>
-            <div className="flex flex-col items-center mb-4">
-              <button onClick={onPickPhoto} className="rounded-full">
+
+            <div className="flex flex-col items-center mb-6">
+              <button onClick={onPickPhoto} className="rounded-full transition-transform hover:scale-105">
                 {pendingPhoto ? (
                   <img src={pendingPhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-white/30" />
                 ) : (
@@ -219,39 +225,78 @@ export default function ProfilePage() {
               </button>
               <input ref={setFileInputRef} type="file" accept="image/*" className="hidden" onChange={e => onFileSelected(e.target.files?.[0] || undefined)} />
             </div>
-            <div className="space-y-3">
-              <input
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 outline-none focus:border-white/40"
-                placeholder="Display name"
-                value={pendingName}
-                onChange={e => setPendingName(e.target.value)}
-              />
-              <input
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 outline-none focus:border-white/40"
-                placeholder="Email"
-                type="email"
-                value={pendingEmail}
-                onChange={e => setPendingEmail(e.target.value)}
-              />
-              {pendingEmail !== email && (
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Display Name
+                </label>
                 <input
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 outline-none focus:border-white/40"
-                  placeholder="Confirm password to update email"
-                  type="password"
-                  value={emailPassword}
-                  onChange={e => setEmailPassword(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/60"
+                  placeholder="Enter display name"
+                  value={pendingName}
+                  onChange={e => setPendingName(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Email
+                </label>
+                <input
+                  className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/60"
+                  placeholder="Enter email address"
+                  type="email"
+                  value={pendingEmail}
+                  onChange={e => setPendingEmail(e.target.value)}
+                />
+              </div>
+
+              {pendingEmail !== email && (
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-2">
+                    Confirm Password
+                  </label>
+                  <input
+                    className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/60"
+                    placeholder="Enter your password to update email"
+                    type="password"
+                    value={emailPassword}
+                    onChange={e => setEmailPassword(e.target.value)}
+                  />
+                </div>
               )}
-              <input
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 outline-none focus:border-white/40"
-                placeholder="Phone"
-                value={pendingPhone}
-                onChange={e => setPendingPhone(e.target.value)}
-              />
+
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/60"
+                  placeholder="Enter phone number"
+                  value={pendingPhone}
+                  onChange={e => setPendingPhone(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="flex gap-3 mt-5 justify-end">
-              <button disabled={saving} onClick={cancelEdit} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20">Cancel</button>
-              <button disabled={saving} onClick={saveEdit} className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={cancelEdit}
+                className="flex-1 py-3 px-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={saveEdit}
+                className="flex-1 py-3 px-4 bg-white text-[#0c504a] rounded-xl font-semibold hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
         </div>

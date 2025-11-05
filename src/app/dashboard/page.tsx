@@ -5,7 +5,9 @@ import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
 import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiUser, FiBell, FiArrowUp, FiArrowDown } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
+import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
+import TransactionListItem from '@/app/components/TransactionListItem'
 
 export default function DashboardPage() {
   const [greeting] = useState(() => {
@@ -14,6 +16,33 @@ export default function DashboardPage() {
     if (hour < 18) return 'Good Afternoon'
     return 'Good Evening'
   })
+
+  // Helper function to convert Firestore Timestamp or ISO string to Date
+  const parseDate = (dateValue: any): Date | null => {
+    if (!dateValue) return null
+    
+    try {
+      // If it's a Firestore Timestamp object (has seconds and nanos)
+      if (typeof dateValue === 'object' && dateValue.seconds !== undefined) {
+        // Convert seconds to milliseconds and add nanos converted to milliseconds
+        // nanos are in nanoseconds (1e9), so divide by 1e6 to get milliseconds
+        const milliseconds = dateValue.seconds * 1000 + Math.floor((dateValue.nanos || 0) / 1000000)
+        return new Date(milliseconds)
+      }
+      
+      // If it's already a string (ISO format)
+      if (typeof dateValue === 'string') {
+        const date = new Date(dateValue)
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error)
+    }
+    
+    return null
+  }
 
   // Dummy data for radar chart
   const expenseData = [
@@ -38,6 +67,7 @@ export default function DashboardPage() {
   }
   const [recentTransactions, setRecentTransactions] = useState<RecentEntry[]>([])
   const [loadingRecent, setLoadingRecent] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
 
   const waitForAuthUid = (): Promise<string> => new Promise((resolve, reject) => {
     const unsub = auth.onAuthStateChanged((user) => {
@@ -72,6 +102,36 @@ export default function DashboardPage() {
     })()
     return () => { mounted = false }
   }, [])
+
+  // Load categories for transaction list items
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const [exp, inc] = await Promise.all([
+          categoryService.fetchCategories('EXPENSE'),
+          categoryService.fetchCategories('INCOME')
+        ])
+        const arr: Category[] = []
+        if (exp.success && exp.data) arr.push(...(Array.isArray(exp.data) ? exp.data : []))
+        if (inc.success && inc.data) arr.push(...(Array.isArray(inc.data) ? inc.data : []))
+        setCategories(arr)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    })()
+  }, [])
+
+  const categoryIdToCategory = useMemo(() => {
+    const m = new Map<string, Category>()
+    categories.forEach(c => m.set(c.id, c))
+    return m
+  }, [categories])
+
+  const categoryIdToName = useMemo(() => {
+    const m = new Map<string, string>()
+    categories.forEach(c => m.set(c.id, c.name))
+    return m
+  }, [categories])
 
   const quickActions = [
     { icon: <FiPlus />, label: 'Add', description: 'Transaction', href: '/add' },
@@ -196,24 +256,18 @@ export default function DashboardPage() {
               <div className="text-white/60 text-sm">No recent transactions</div>
             )}
             {!loadingRecent && recentTransactions.map((t) => (
-              <Link href={`/transactions/${t.id}`} key={t.id}>
-                <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/5 rounded-lg px-2 transition-all cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-xs text-white">
-                      {t.type === 'INCOME' ? 'IN' : 'OUT'}
-                    </div>
-                    <div>
-                      <p className="text-white font-medium text-sm">{t.title}</p>
-                      <p className="text-white/50 text-xs">{new Date(t.date).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-bold text-base ${t.type === 'INCOME' ? 'text-green-300' : 'text-white'}`}>
-                      {t.type === 'INCOME' ? '+' : '-'}${Math.abs(t.amount).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+              <TransactionListItem
+                key={t.id}
+                id={t.id}
+                title={t.title}
+                type={t.type}
+                amount={t.amount}
+                categoryId={t.categoryId}
+                date={t.date}
+                categoryIdToCategory={categoryIdToCategory}
+                categoryIdToName={categoryIdToName}
+                parseDate={parseDate}
+              />
             ))}
           </div>
         </div>

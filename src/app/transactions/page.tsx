@@ -7,6 +7,7 @@ import { FiArrowLeft, FiSearch, FiChevronDown } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
+import TransactionListItem from '@/app/components/TransactionListItem'
 
 type EntryItem = {
   id: string
@@ -25,6 +26,33 @@ export default function TransactionsPage() {
   const [hasNext, setHasNext] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isInitial, setIsInitial] = useState(true)
+
+  // Helper function to convert Firestore Timestamp or ISO string to Date
+  const parseDate = (dateValue: any): Date | null => {
+    if (!dateValue) return null
+    
+    try {
+      // If it's a Firestore Timestamp object (has seconds and nanos)
+      if (typeof dateValue === 'object' && dateValue.seconds !== undefined) {
+        // Convert seconds to milliseconds and add nanos converted to milliseconds
+        // nanos are in nanoseconds (1e9), so divide by 1e6 to get milliseconds
+        const milliseconds = dateValue.seconds * 1000 + Math.floor((dateValue.nanos || 0) / 1000000)
+        return new Date(milliseconds)
+      }
+      
+      // If it's already a string (ISO format)
+      if (typeof dateValue === 'string') {
+        const date = new Date(dateValue)
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error)
+    }
+    
+    return null
+  }
 
   // filters
   const [searchTerm, setSearchTerm] = useState('')
@@ -68,6 +96,12 @@ export default function TransactionsPage() {
   const categoryIdToName = useMemo(() => {
     const m = new Map<string, string>()
     categories.forEach(c => m.set(c.id, c.name))
+    return m
+  }, [categories])
+
+  const categoryIdToCategory = useMemo(() => {
+    const m = new Map<string, Category>()
+    categories.forEach(c => m.set(c.id, c))
     return m
   }, [categories])
 
@@ -229,24 +263,18 @@ export default function TransactionsPage() {
         {/* Transaction List */}
         <div className="space-y-3">
           {useMemo(() => dedupeEntries(entries), [entries]).map((entry) => (
-            <Link href={`/transactions/${entry.id}`} key={entry.id}>
-              <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/5 rounded-lg px-2 transition-all cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-sm">
-                    {entry.type === 'INCOME' ? 'IN' : 'OUT'}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{entry.title}</p>
-                    <p className="text-white/50 text-xs">{categoryIdToName.get(entry.categoryId) || 'Category'} • {new Date(entry.date).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-bold text-base ${entry.type === 'INCOME' ? 'text-green-300' : 'text-white'}`}>
-                    {entry.type === 'INCOME' ? '+' : '-'}${Math.abs(entry.amount).toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </Link>
+            <TransactionListItem
+              key={entry.id}
+              id={entry.id}
+              title={entry.title}
+              type={entry.type}
+              amount={entry.amount}
+              categoryId={entry.categoryId}
+              date={entry.date}
+              categoryIdToCategory={categoryIdToCategory}
+              categoryIdToName={categoryIdToName}
+              parseDate={parseDate}
+            />
           ))}
           {/* Loading / Sentinel */}
           <div ref={sentinelRef} className="h-8" />
