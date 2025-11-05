@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart3, FiCalendar } from 'react-icons/fi'
+import { FiArrowLeft, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart, FiCalendar } from 'react-icons/fi'
 
 export default function AnalyticsPage() {
   const router = useRouter()
@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
         {/* Monthly Trends */}
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <FiBarChart3 className="text-xl" />
+            <FiBarChart className="text-xl" />
             <h3 className="text-lg font-semibold">Monthly Trends</h3>
           </div>
           

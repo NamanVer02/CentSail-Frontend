@@ -1,6 +1,7 @@
 import { auth } from '@/lib/config/firebase'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+// Route through Next.js rewrite proxy to avoid CORS/proxy issues
+const API_BASE_URL = '/api'
 
 export interface Entry {
   id: string
