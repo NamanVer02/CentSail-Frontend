@@ -36,6 +36,8 @@ export default function AddTransactionPage() {
     return Array.from(map.values())
   }
 
+  const dedupedCategories = useMemo(() => dedupeCategories(categories), [categories])
+
   // Fetch categories when component mounts and when transaction type changes
   useEffect(() => {
     const fetchCategories = async () => {
@@ -323,7 +325,7 @@ export default function AddTransactionPage() {
               <div className="text-center py-12 text-white/60 text-sm">No categories available</div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
-                {useMemo(() => dedupeCategories(categories), [categories]).map((category: Category, index: number) => {
+                {dedupedCategories.map((category: Category, index: number) => {
                   const isSelected = formData.category === category.id
                   
                   return (

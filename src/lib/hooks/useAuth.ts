@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { firebaseAuthService } from '@/lib/services/firebaseAuthService';
 import { SignupRequest, LoginRequest, FirebaseUser, AuthError } from '@/lib/types/auth';
+import { authService } from '@/lib/services/authService';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -60,12 +61,21 @@ export function useAuth(): AuthState & AuthActions {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      const user = await firebaseAuthService.signUp(
-        data.email, 
-        data.password, 
-        data.displayName
-      );
-      
+      // Create the user via backend API
+      const signupResponse = await authService.signup({
+        username: data.displayName ?? data.email.split('@')[0],
+        email: data.email,
+        password: data.password,
+      });
+
+      if (!signupResponse.success) {
+        setState(prev => ({ ...prev, isLoading: false, error: signupResponse.message || 'Sign up failed' }));
+        return false;
+      }
+
+      // Sign in the new user with Firebase to establish client session
+      const user = await firebaseAuthService.signIn(data.email, data.password);
+
       setState(prev => ({
         ...prev,
         isLoading: false,
