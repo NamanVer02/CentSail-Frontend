@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
                   ${summaryData?.totalIncome.toFixed(2) || '0.00'}
                 </p>
                 {summaryData && summaryData.incomeChange !== undefined && (
-                  <p className={`text-xs ${summaryData.incomeChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className="text-xs text-white/75">
                     {formatChange(summaryData.incomeChange)} from last month
                   </p>
                 )}
@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
                   ${summaryData?.totalExpenses.toFixed(2) || '0.00'}
                 </p>
                 {summaryData && summaryData.expensesChange !== undefined && (
-                  <p className={`text-xs ${summaryData.expensesChange >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                  <p className="text-xs text-white/75">
                     {formatChange(summaryData.expensesChange)} from last month
                   </p>
                 )}

@@ -31,7 +31,12 @@ export default function TransactionListItem({
   const categoryColor = category?.color || '#6366f1'
   const categoryName = categoryIdToName.get(categoryId) || 'Category'
   const dateObj = parseDate(date)
-  const formattedDate = dateObj ? dateObj.toLocaleDateString() : 'Invalid Date'
+  const formattedDate = dateObj ? (() => {
+    const day = String(dateObj.getDate()).padStart(2, '0')
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+    const year = dateObj.getFullYear()
+    return `${day}/${month}/${year}`
+  })() : 'Invalid Date'
   const isIncome = type === 'INCOME'
 
   return (

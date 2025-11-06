@@ -222,7 +222,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
         {/* Amount */}
         <div className="flex flex-col items-center justify-center py-8">
             <div className={`text-6xl p-5 rounded-full mb-4 bg-gradient-to-tr ${isIncome ? 'from-green-400/20 to-green-500/10' : 'from-white/20 to-white/10'}`}>💸</div>
-            <p className={`text-5xl font-bold ${isIncome ? 'text-green-300' : 'text-white'}`}>{isIncome ? '+' : '-'}${Math.abs(entry.amount).toFixed(2)}</p>
+            <p className={`text-5xl font-bold ${isIncome ? 'text-green-300' : 'text-white'}`}>{isIncome ? '+' : ''}${Math.abs(entry.amount).toFixed(2)}</p>
             <p className="text-white/60 text-sm mt-1">{categoryName}</p>
         </div>
         

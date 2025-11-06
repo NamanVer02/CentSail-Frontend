@@ -198,19 +198,19 @@ export default function CategoriesManagementPage() {
                   {expenseCategories.map((category) => (
                     <div
                       key={category.id}
-                      className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between"
+                      className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between gap-3"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20"
+                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 flex-shrink-0"
                           style={{ backgroundColor: category.color || '#6366f1' }}
                         >
                           <FiTag className="text-white text-sm" />
                         </div>
-                        <div>
-                          <p className="font-medium">{category.name}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{category.name}</p>
                           {category.description && (
-                            <p className="text-xs text-white/50">{category.description}</p>
+                            <p className="text-xs text-white/50 break-words">{category.description}</p>
                           )}
                         </div>
                       </div>
@@ -247,19 +247,19 @@ export default function CategoriesManagementPage() {
                   {incomeCategories.map((category) => (
                     <div
                       key={category.id}
-                      className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between"
+                      className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between gap-3"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20"
+                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 flex-shrink-0"
                           style={{ backgroundColor: category.color || '#6366f1' }}
                         >
                           <FiTag className="text-white text-sm" />
                         </div>
-                        <div>
-                          <p className="font-medium">{category.name}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{category.name}</p>
                           {category.description && (
-                            <p className="text-xs text-white/50">{category.description}</p>
+                            <p className="text-xs text-white/50 break-words">{category.description}</p>
                           )}
                         </div>
                       </div>
