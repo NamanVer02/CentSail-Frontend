@@ -6,6 +6,7 @@ import RadarChart from '@/app/components/ui/RadarChart'
 import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiUser, FiBell, FiArrowUp, FiArrowDown } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
+import { analyticsService, CategoryExpenseData } from '@/lib/services/analyticsService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
 
@@ -44,17 +45,41 @@ export default function DashboardPage() {
     return null
   }
 
-  // Dummy data for radar chart
-  const expenseData = [
-    { label: 'Internet', value: 9, icon: <FiGlobe /> },
-    { label: 'Grocery', value: 24, icon: <FiShoppingCart /> },
-    { label: 'Taxi', value: 14, icon: <FiSend /> },
-    { label: 'Restaurants', value: 9, icon: <FiWatch /> },
-    { label: 'Sport', value: 13, icon: <FiAward /> },
-    { label: 'Alcohol', value: 3, icon: <FiAlertTriangle /> },
-    { label: 'Entertainment', value: 24, icon: <FiFilm /> },
-    { label: 'Clothes', value: 4, icon: <FiShoppingBag /> },
-  ]
+  // Analytics data for radar chart
+  const [analyticsData, setAnalyticsData] = useState<CategoryExpenseData[]>([])
+  const [totalExpenses, setTotalExpenses] = useState<number>(0)
+  const [totalIncome, setTotalIncome] = useState<number>(0)
+  const [totalBalance, setTotalBalance] = useState<number>(0)
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false)
+
+  // Icon mapping for categories
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase()
+    if (name.includes('food') || name.includes('grocery') || name.includes('restaurant')) return <FiShoppingCart />
+    if (name.includes('transport') || name.includes('taxi') || name.includes('uber')) return <FiSend />
+    if (name.includes('entertainment') || name.includes('movie') || name.includes('game')) return <FiFilm />
+    if (name.includes('shopping') || name.includes('clothes') || name.includes('fashion')) return <FiShoppingBag />
+    if (name.includes('internet') || name.includes('wifi') || name.includes('network')) return <FiGlobe />
+    if (name.includes('sport') || name.includes('fitness') || name.includes('gym')) return <FiAward />
+    if (name.includes('alcohol') || name.includes('drink') || name.includes('bar')) return <FiAlertTriangle />
+    if (name.includes('watch') || name.includes('time')) return <FiWatch />
+    return <FiShoppingCart /> // default icon
+  }
+
+  // Transform analytics data for radar chart
+  const expenseData = useMemo(() => {
+    if (analyticsData.length === 0 || totalExpenses === 0) {
+      return []
+    }
+    
+    // Calculate percentage for each category
+    return analyticsData.map(item => ({
+      label: item.categoryName,
+      value: totalExpenses > 0 ? Math.round((item.amount / totalExpenses) * 100) : 0,
+      icon: getCategoryIcon(item.categoryName),
+      amount: item.amount
+    }))
+  }, [analyticsData, totalExpenses])
 
   // Recent transactions from backend
   type RecentEntry = {
@@ -121,6 +146,28 @@ export default function DashboardPage() {
     })()
   }, [])
 
+  // Fetch analytics data for radar chart
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      setLoadingAnalytics(true)
+      try {
+        const response = await analyticsService.getDashboardAnalytics()
+        if (mounted && response.success && response.data) {
+          setAnalyticsData(response.data.categories || [])
+          setTotalExpenses(response.data.totalExpenses || 0)
+          setTotalIncome(response.data.totalIncome || 0)
+          setTotalBalance(response.data.totalBalance || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error)
+      } finally {
+        if (mounted) setLoadingAnalytics(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
   const categoryIdToCategory = useMemo(() => {
     const m = new Map<string, Category>()
     categories.forEach(c => m.set(c.id, c))
@@ -175,12 +222,18 @@ export default function DashboardPage() {
           <div className="flex items-end justify-between mb-3">
             <div>
               <p className="text-white/60 text-xs mb-1">Total Balance</p>
-              <h2 className="text-4xl font-bold text-white">$1,632.82</h2>
+              <h2 className={`text-4xl font-bold ${totalBalance >= 0 ? 'text-white' : 'text-red-300'}`}>
+                ${totalBalance.toFixed(2)}
+              </h2>
             </div>
-            <div className="text-right mb-1">
-              <p className="text-green-300 text-sm font-semibold">+13%</p>
-              <p className="text-white/50 text-xs">this month</p>
-            </div>
+            {totalIncome > 0 && (
+              <div className="text-right mb-1">
+                <p className={`text-sm font-semibold ${totalBalance >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                  {((totalBalance / totalIncome) * 100).toFixed(0)}%
+                </p>
+                <p className="text-white/50 text-xs">savings rate</p>
+              </div>
+            )}
           </div>
           
           <div className="flex gap-6 mt-3">
@@ -188,14 +241,14 @@ export default function DashboardPage() {
               <span className="text-green-300 text-xl"><FiArrowUp /></span>
               <div>
                 <p className="text-white/50 text-[10px] uppercase tracking-wide">Income</p>
-                <p className="text-white font-semibold text-lg">$3,500.00</p>
+                <p className="text-white font-semibold text-lg">${totalIncome.toFixed(2)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-red-300 text-xl"><FiArrowDown /></span>
               <div>
                 <p className="text-white/50 text-[10px] uppercase tracking-wide">Expenses</p>
-                <p className="text-white font-semibold text-lg">$1,867.18</p>
+                <p className="text-white font-semibold text-lg">${totalExpenses.toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -226,16 +279,26 @@ export default function DashboardPage() {
         <div className="backdrop-blur-2xl bg-white/10 rounded-3xl p-6 shadow-2xl border border-white/20 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-white">Expense Analytics</h3>
-            <button className="text-white/70 text-sm hover:text-white transition-colors">
+            <Link href="/analytics" className="text-white/70 text-sm hover:text-white transition-colors">
               Details →
-            </button>
+            </Link>
           </div>
           
-          <RadarChart data={expenseData} />
+          {loadingAnalytics ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-white/60 text-sm">Loading analytics...</div>
+            </div>
+          ) : expenseData.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-white/60 text-sm">No expense data available</div>
+            </div>
+          ) : (
+            <RadarChart data={expenseData} />
+          )}
           
           <div className="mt-4 text-center">
-            <p className="text-white/60 text-xs mb-1">Total spent this month</p>
-            <p className="text-white text-3xl font-bold">$841.90</p>
+            <p className="text-white/60 text-xs mb-1">Total spent</p>
+            <p className="text-white text-3xl font-bold">${totalExpenses.toFixed(2)}</p>
           </div>
         </div>
 

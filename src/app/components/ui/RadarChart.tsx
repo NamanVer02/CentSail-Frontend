@@ -1,10 +1,13 @@
 'use client'
 
+import { ReactNode } from 'react'
+
 interface RadarChartProps {
   data: {
     label: string
     value: number
-    icon: string
+    icon: ReactNode
+    amount?: number
   }[]
 }
 
@@ -31,7 +34,7 @@ export default function RadarChart({ data }: RadarChartProps) {
     const angle = angleStep * index - Math.PI / 2
     const x = centerX + (radius + 40) * Math.cos(angle)
     const y = centerY + (radius + 40) * Math.sin(angle)
-    return { x, y, label: item.label, value: item.value, icon: item.icon }
+    return { x, y, label: item.label, value: item.value, icon: item.icon, amount: item.amount }
   })
 
   return (
@@ -119,6 +122,9 @@ export default function RadarChart({ data }: RadarChartProps) {
           <div className="text-lg mb-1">{pos.icon}</div>
           <div className="font-medium">{pos.value}%</div>
           <div className="text-[10px]">{pos.label}</div>
+          {pos.amount !== undefined && (
+            <div className="text-[9px] text-white/50 mt-0.5">${pos.amount.toFixed(0)}</div>
+          )}
         </div>
       ))}
     </div>

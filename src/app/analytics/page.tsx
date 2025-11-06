@@ -1,27 +1,135 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { FiArrowLeft, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart, FiCalendar } from 'react-icons/fi'
+import { analyticsService } from '@/lib/services/analyticsService'
+import { toast } from '@/lib/utils/toast'
 
 export default function AnalyticsPage() {
   const router = useRouter()
 
-  const analyticsData = [
-    { label: 'Food & Dining', amount: 450.50, percentage: 35, color: 'bg-red-400' },
-    { label: 'Transportation', amount: 280.75, percentage: 22, color: 'bg-blue-400' },
-    { label: 'Entertainment', amount: 180.25, percentage: 14, color: 'bg-purple-400' },
-    { label: 'Shopping', amount: 200.00, percentage: 16, color: 'bg-green-400' },
-    { label: 'Utilities', amount: 150.00, percentage: 12, color: 'bg-yellow-400' },
-  ]
+  const [summaryData, setSummaryData] = useState<{
+    totalIncome: number
+    totalExpenses: number
+    incomeChange: number
+    expensesChange: number
+  } | null>(null)
 
-  const monthlyTrends = [
-    { month: 'Jan', income: 3500, expenses: 2800 },
-    { month: 'Feb', income: 3500, expenses: 3200 },
-    { month: 'Mar', income: 3500, expenses: 2900 },
-    { month: 'Apr', income: 3500, expenses: 3100 },
-    { month: 'May', income: 3500, expenses: 2800 },
-    { month: 'Jun', income: 3500, expenses: 3000 },
-  ]
+  const [expenseBreakdown, setExpenseBreakdown] = useState<Array<{
+    categoryId: string
+    categoryName: string
+    amount: number
+    percentage: number
+    color: string
+  }>>([])
+
+  const [monthlyTrends, setMonthlyTrends] = useState<Array<{
+    month: string
+    monthFull: string
+    income: number
+    expenses: number
+  }>>([])
+
+  const [savingsRate, setSavingsRate] = useState<{
+    savingsRate: number
+    savingsAmount: number
+  } | null>(null)
+
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        setLoading(true)
+
+        // Fetch all analytics data in parallel
+        const [summaryRes, breakdownRes, trendsRes, savingsRes] = await Promise.all([
+          analyticsService.getSummary(),
+          analyticsService.getExpenseBreakdown(),
+          analyticsService.getMonthlyTrends(6),
+          analyticsService.getSavingsRate(),
+        ])
+
+        // Handle summary data
+        if (summaryRes.success && summaryRes.data) {
+          setSummaryData(summaryRes.data)
+        } else {
+          console.error('Failed to fetch summary:', summaryRes.message)
+          toast.error('Failed to load summary data')
+        }
+
+        // Handle expense breakdown
+        if (breakdownRes.success && breakdownRes.data) {
+          setExpenseBreakdown(breakdownRes.data.categories || [])
+        } else {
+          console.error('Failed to fetch expense breakdown:', breakdownRes.message)
+          toast.error('Failed to load expense breakdown')
+        }
+
+        // Handle monthly trends
+        if (trendsRes.success && trendsRes.data) {
+          setMonthlyTrends(trendsRes.data.trends || [])
+        } else {
+          console.error('Failed to fetch monthly trends:', trendsRes.message)
+          toast.error('Failed to load monthly trends')
+        }
+
+        // Handle savings rate
+        if (savingsRes.success && savingsRes.data) {
+          setSavingsRate({
+            savingsRate: savingsRes.data.savingsRate,
+            savingsAmount: savingsRes.data.savingsAmount,
+          })
+        } else {
+          console.error('Failed to fetch savings rate:', savingsRes.message)
+          toast.error('Failed to load savings rate')
+        }
+      } catch (error) {
+        console.error('Error fetching analytics data:', error)
+        toast.error('Failed to load analytics data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAnalyticsData()
+  }, [])
+
+  // Helper function to get color class from hex color
+  const getColorClass = (hexColor: string): string => {
+    // Map common hex colors to Tailwind classes
+    const colorMap: Record<string, string> = {
+      '#ef4444': 'bg-red-400',
+      '#f97316': 'bg-orange-400',
+      '#fbbf24': 'bg-yellow-400',
+      '#84cc16': 'bg-lime-400',
+      '#22c55e': 'bg-green-400',
+      '#10b981': 'bg-emerald-400',
+      '#14b8a6': 'bg-teal-400',
+      '#06b6d4': 'bg-cyan-400',
+      '#3b82f6': 'bg-blue-400',
+      '#6366f1': 'bg-indigo-400',
+      '#8b5cf6': 'bg-violet-400',
+      '#a855f7': 'bg-purple-400',
+      '#ec4899': 'bg-pink-400',
+      '#f43f5e': 'bg-rose-400',
+    }
+
+    // Try to find exact match
+    if (colorMap[hexColor.toLowerCase()]) {
+      return colorMap[hexColor.toLowerCase()]
+    }
+
+    // Default fallback
+    return 'bg-indigo-400'
+  }
+
+  // Format percentage change with sign
+  const formatChange = (change: number): string => {
+    const sign = change >= 0 ? '+' : ''
+    return `${sign}${change.toFixed(1)}%`
+  }
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
@@ -33,93 +141,141 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-20 pb-10">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <FiTrendingUp className="text-green-400" />
-              <span className="text-xs text-white/60">Total Income</span>
-            </div>
-            <p className="text-2xl font-bold">$3,500</p>
-            <p className="text-xs text-green-400">+5.2% from last month</p>
+      <div className="max-w-md mx-auto px-4 pt-20 pb-24">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-white/60">Loading analytics...</div>
           </div>
-          
-          <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <FiTrendingDown className="text-red-400" />
-              <span className="text-xs text-white/60">Total Expenses</span>
-            </div>
-            <p className="text-2xl font-bold">$2,800</p>
-            <p className="text-xs text-red-400">+2.1% from last month</p>
-          </div>
-        </div>
-
-        {/* Expense Breakdown */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FiPieChart className="text-xl" />
-            <h3 className="text-lg font-semibold">Expense Breakdown</h3>
-          </div>
-          
-          <div className="space-y-4">
-            {analyticsData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full ${item.color}`}></div>
-                  <span className="text-sm">{item.label}</span>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <FiTrendingUp className="text-green-400" />
+                  <span className="text-xs text-white/60">Total Income</span>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">${item.amount}</p>
-                  <p className="text-xs text-white/60">{item.percentage}%</p>
-                </div>
+                <p className="text-2xl font-bold">
+                  ${summaryData?.totalIncome.toFixed(2) || '0.00'}
+                </p>
+                {summaryData && summaryData.incomeChange !== undefined && (
+                  <p className={`text-xs ${summaryData.incomeChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {formatChange(summaryData.incomeChange)} from last month
+                  </p>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+              
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <FiTrendingDown className="text-red-400" />
+                  <span className="text-xs text-white/60">Total Expenses</span>
+                </div>
+                <p className="text-2xl font-bold">
+                  ${summaryData?.totalExpenses.toFixed(2) || '0.00'}
+                </p>
+                {summaryData && summaryData.expensesChange !== undefined && (
+                  <p className={`text-xs ${summaryData.expensesChange >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    {formatChange(summaryData.expensesChange)} from last month
+                  </p>
+                )}
+              </div>
+            </div>
 
-        {/* Monthly Trends */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FiBarChart className="text-xl" />
-            <h3 className="text-lg font-semibold">Monthly Trends</h3>
-          </div>
-          
-          <div className="space-y-3">
-            {monthlyTrends.map((trend, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-white/60">{trend.month}</span>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xs text-green-400">Income</p>
-                    <p className="text-sm font-semibold">${trend.income}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-red-400">Expenses</p>
-                    <p className="text-sm font-semibold">${trend.expenses}</p>
+            {/* Expense Breakdown */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FiPieChart className="text-xl" />
+                <h3 className="text-lg font-semibold">Expense Breakdown</h3>
+              </div>
+              
+              {expenseBreakdown.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  <p>No expense data available</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {expenseBreakdown.map((item) => (
+                    <div key={item.categoryId} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className={`w-4 h-4 rounded-full ${getColorClass(item.color)}`}
+                          style={{ backgroundColor: item.color }}
+                        ></div>
+                        <span className="text-sm">{item.categoryName}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">${item.amount.toFixed(2)}</p>
+                        <p className="text-xs text-white/60">{item.percentage.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Monthly Trends */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FiBarChart className="text-xl" />
+                <h3 className="text-lg font-semibold">Monthly Trends</h3>
+              </div>
+              
+              {monthlyTrends.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  <p>No trend data available</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {monthlyTrends.map((trend, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-white/60">{trend.month}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-xs text-green-400">Income</p>
+                          <p className="text-sm font-semibold">${trend.income.toFixed(2)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-red-400">Expenses</p>
+                          <p className="text-sm font-semibold">${trend.expenses.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Savings Rate */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <FiDollarSign className="text-xl" />
+                <h3 className="text-lg font-semibold">Savings Rate</h3>
+              </div>
+              
+              {savingsRate ? (
+                <div className="text-center">
+                  <p className={`text-4xl font-bold mb-2 ${savingsRate.savingsRate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {savingsRate.savingsRate.toFixed(1)}%
+                  </p>
+                  <p className="text-sm text-white/60 mb-4">
+                    You're saving ${Math.abs(savingsRate.savingsAmount).toFixed(2)} {savingsRate.savingsAmount >= 0 ? 'per month' : 'in debt'}
+                  </p>
+                  
+                  <div className="w-full bg-white/10 rounded-full h-3">
+                    <div 
+                      className={`h-3 rounded-full ${savingsRate.savingsRate >= 0 ? 'bg-green-400' : 'bg-red-400'}`}
+                      style={{ width: `${Math.min(Math.abs(savingsRate.savingsRate), 100)}%` }}
+                    ></div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Savings Rate */}
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl">
-          <div className="flex items-center gap-2 mb-4">
-            <FiDollarSign className="text-xl" />
-            <h3 className="text-lg font-semibold">Savings Rate</h3>
-          </div>
-          
-          <div className="text-center">
-            <p className="text-4xl font-bold text-green-400 mb-2">20%</p>
-            <p className="text-sm text-white/60 mb-4">You're saving $700 per month</p>
-            
-            <div className="w-full bg-white/10 rounded-full h-3">
-              <div className="bg-green-400 h-3 rounded-full" style={{width: '20%'}}></div>
+              ) : (
+                <div className="text-center py-8 text-white/60">
+                  <p>No savings data available</p>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   )
