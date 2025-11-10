@@ -7,9 +7,11 @@ import { categoryService, Category } from '@/lib/services/categoryService'
 import { entryService } from '@/lib/services/entryService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
+import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 
 export default function AddTransactionPage() {
   const router = useRouter()
+  const scrollProgress = useScrollActivation(50)
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense')
   const [formData, setFormData] = useState({
     amount: '',
@@ -211,8 +213,15 @@ export default function AddTransactionPage() {
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white pb-8">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 bg-transparent z-10">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center">
+      <div className="fixed top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
+          style={{
+            backgroundColor: `rgba(12, 80, 74, ${0.4 + scrollProgress * 0.4})`,
+            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
+            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
+          }}
+        >
           <button 
             onClick={() => router.back()} 
             className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2"
@@ -223,7 +232,7 @@ export default function AddTransactionPage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-20 pb-8">
+      <div className="max-w-md mx-auto px-4 pt-28 pb-8">
         {/* Transaction Type Toggle */}
         <div className="mb-8">
           <div className="flex gap-3 p-1 bg-white/5 rounded-2xl border border-white/10">

@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { FiArrowLeft, FiUser, FiBell, FiEye, FiShield, FiHelpCircle, FiChevronRight, FiTag } from 'react-icons/fi'
+import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 
 export default function SettingsPage() {
   const router = useRouter()
+  const scrollProgress = useScrollActivation(50)
 
   const settingsOptions = [
     {
@@ -48,14 +50,21 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 bg-transparent z-10">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center">
+      <div className="fixed top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
+          style={{
+            backgroundColor: `rgba(12, 80, 74, ${0.4 + scrollProgress * 0.4})`,
+            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
+            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
+          }}
+        >
           <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2"><FiArrowLeft /></button>
           <h1 className="text-lg font-semibold">Settings</h1>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-20 pb-10">
+      <div className="max-w-md mx-auto px-4 pt-28 pb-10">
         <div className="space-y-3">
           {settingsOptions.map((option, index) => (
             <div
