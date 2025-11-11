@@ -52,18 +52,68 @@ export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [loadingAnalytics, setLoadingAnalytics] = useState(false)
 
-  // Icon mapping for categories
+  // Icon mapping for categories - try explicit names, then keyword fallbacks, then a stable hash-based fallback
   const getCategoryIcon = (categoryName: string) => {
-    const name = categoryName.toLowerCase()
+    const name = categoryName.trim().toLowerCase()
+    // Explicit common categories
+    const explicit: Record<string, JSX.Element> = {
+      'groceries': <FiShoppingCart />,
+      'grocery': <FiShoppingCart />,
+      'food': <FiShoppingCart />,
+      'restaurants': <FiShoppingCart />,
+      'restaurant': <FiShoppingCart />,
+      'transport': <FiSend />,
+      'taxi': <FiSend />,
+      'uber': <FiSend />,
+      'bus': <FiSend />,
+      'fuel': <FiSend />,
+      'gas': <FiSend />,
+      'entertainment': <FiFilm />,
+      'movies': <FiFilm />,
+      'movie': <FiFilm />,
+      'games': <FiFilm />,
+      'game': <FiFilm />,
+      'shopping': <FiShoppingBag />,
+      'clothes': <FiShoppingBag />,
+      'fashion': <FiShoppingBag />,
+      'internet': <FiGlobe />,
+      'wifi': <FiGlobe />,
+      'network': <FiGlobe />,
+      'sports': <FiAward />,
+      'sport': <FiAward />,
+      'fitness': <FiAward />,
+      'gym': <FiAward />,
+      'alcohol': <FiAlertTriangle />,
+      'drinks': <FiAlertTriangle />,
+      'drink': <FiAlertTriangle />,
+      'bar': <FiAlertTriangle />,
+      'watch': <FiWatch />,
+      'time': <FiWatch />,
+      'investments': <FiTrendingUp />,
+      'investment': <FiTrendingUp />,
+      'salary': <FiTrendingUp />,
+      'income': <FiTrendingUp />
+    }
+    if (explicit[name]) return explicit[name]
+    // Keyword fallbacks
     if (name.includes('food') || name.includes('grocery') || name.includes('restaurant')) return <FiShoppingCart />
-    if (name.includes('transport') || name.includes('taxi') || name.includes('uber')) return <FiSend />
+    if (name.includes('transport') || name.includes('taxi') || name.includes('uber') || name.includes('fuel')) return <FiSend />
     if (name.includes('entertainment') || name.includes('movie') || name.includes('game')) return <FiFilm />
     if (name.includes('shopping') || name.includes('clothes') || name.includes('fashion')) return <FiShoppingBag />
     if (name.includes('internet') || name.includes('wifi') || name.includes('network')) return <FiGlobe />
     if (name.includes('sport') || name.includes('fitness') || name.includes('gym')) return <FiAward />
     if (name.includes('alcohol') || name.includes('drink') || name.includes('bar')) return <FiAlertTriangle />
     if (name.includes('watch') || name.includes('time')) return <FiWatch />
-    return <FiShoppingCart /> // default icon
+    if (name.includes('invest') || name.includes('salary') || name.includes('income')) return <FiTrendingUp />
+    // Stable fallback so different unmatched categories don't use the exact same icon
+    const pool = [<FiShoppingCart />, <FiSend />, <FiFilm />, <FiShoppingBag />, <FiGlobe />, <FiAward />, <FiAlertTriangle />, <FiWatch />, <FiBarChart2 />, <FiTarget />]
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = ((hash << 5) - hash) + name.charCodeAt(i)
+      hash |= 0
+    }
+    const index = Math.abs(hash) % pool.length
+    return pool[index]
   }
 
   // Transform analytics data for radar chart

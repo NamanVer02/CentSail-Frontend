@@ -240,7 +240,7 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <div className="pt-32">
+      <div className="pt-24">
         {/* Search and Filters */}
         <div className="mb-6">
           <div className="relative mb-4">

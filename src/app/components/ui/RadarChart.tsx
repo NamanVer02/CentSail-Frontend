@@ -37,6 +37,16 @@ export default function RadarChart({ data }: RadarChartProps) {
     return { x, y, label: item.label, value: item.value, icon: item.icon, amount: item.amount }
   })
 
+  // Calculate icon positions aligned to the ends of the axes (tips)
+  const iconPositions = data.map((item, index) => {
+    const angle = angleStep * index - Math.PI / 2
+    // place icon slightly outside the chart radius so it aligns to the tip
+    const iconOffset = 10
+    const x = centerX + (radius + iconOffset) * Math.cos(angle)
+    const y = centerY + (radius + iconOffset) * Math.sin(angle)
+    return { x, y, icon: item.icon }
+  })
+
   return (
     <div className="relative w-full aspect-square max-w-[300px] mx-auto">
       <svg viewBox="0 0 300 300" className="w-full h-full">
@@ -107,6 +117,21 @@ export default function RadarChart({ data }: RadarChartProps) {
         })}
       </svg>
 
+      {/* Icons aligned to chart tips */}
+      {iconPositions.map((pos, index) => (
+        <div
+          key={`icon-${index}`}
+          className="absolute text-white"
+          style={{
+            left: `${(pos.x / 300) * 100}%`,
+            top: `${(pos.y / 300) * 100}%`,
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <div className="text-lg">{pos.icon}</div>
+        </div>
+      ))}
+
       {/* Labels positioned around the chart */}
       {labelPositions.map((pos, index) => (
         <div
@@ -119,7 +144,6 @@ export default function RadarChart({ data }: RadarChartProps) {
             width: '60px'
           }}
         >
-          <div className="text-lg mb-1">{pos.icon}</div>
           <div className="font-medium">{pos.value}%</div>
           <div className="text-[10px]">{pos.label}</div>
           {pos.amount !== undefined && (
