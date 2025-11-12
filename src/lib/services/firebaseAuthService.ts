@@ -5,7 +5,16 @@ import {
   onAuthStateChanged,
   updateProfile,
   User,
-  AuthError
+  AuthError,
+  signInWithPhoneNumber,
+  ConfirmationResult,
+  RecaptchaVerifier,
+  signInWithCredential,
+  PhoneAuthProvider,
+  GoogleAuthProvider,
+  signInWithPopup,
+  linkWithCredential,
+  PhoneAuthCredential
 } from 'firebase/auth';
 import { auth } from '@/lib/config/firebase';
 
@@ -58,6 +67,65 @@ export class FirebaseAuthService {
   getCurrentUser(): FirebaseUser | null {
     const user = auth.currentUser;
     return user ? this.mapFirebaseUser(user) : null;
+  }
+
+  async signInWithPhone(phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> {
+    try {
+      return await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  async verifyPhoneOTP(confirmationResult: ConfirmationResult, otp: string): Promise<FirebaseUser> {
+    try {
+      const userCredential = await confirmationResult.confirm(otp);
+      return this.mapFirebaseUser(userCredential.user);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  async signInWithGoogle(): Promise<FirebaseUser> {
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      return this.mapFirebaseUser(userCredential.user);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  async signUpWithPhone(phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> {
+    try {
+      return await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  async verifyPhoneOTPAndSignUp(confirmationResult: ConfirmationResult, otp: string, displayName: string): Promise<FirebaseUser> {
+    try {
+      const userCredential = await confirmationResult.confirm(otp);
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName });
+      }
+      return this.mapFirebaseUser(userCredential.user);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  createRecaptchaVerifier(elementId: string, size: 'normal' | 'invisible' = 'normal'): RecaptchaVerifier {
+    return new RecaptchaVerifier(auth, elementId, {
+      size: size,
+      callback: () => {
+        console.log('reCAPTCHA verified');
+      },
+      'expired-callback': () => {
+        console.log('reCAPTCHA expired');
+      },
+    });
   }
 
   private mapFirebaseUser(user: User): FirebaseUser {
