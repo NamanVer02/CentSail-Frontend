@@ -14,7 +14,10 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   linkWithCredential,
-  PhoneAuthCredential
+  PhoneAuthCredential,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink
 } from 'firebase/auth';
 import { auth } from '@/lib/config/firebase';
 
@@ -110,6 +113,42 @@ export class FirebaseAuthService {
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName });
       }
+      return this.mapFirebaseUser(userCredential.user);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  async sendSignInLinkToEmail(email: string): Promise<void> {
+    try {
+      const actionCodeSettings = {
+        // URL you want to redirect back to. The domain (www.example.com) for this
+        // URL must be in the authorized domains list in the Firebase Console.
+        url: `${window.location.origin}/auth/email-callback`,
+        // This must be true.
+        handleCodeInApp: true,
+      };
+      
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      
+      // Save the email to localStorage so we can use it after the user clicks the link
+      window.localStorage.setItem('emailForSignIn', email);
+    } catch (error) {
+      throw this.handleAuthError(error as AuthError);
+    }
+  }
+
+  isSignInWithEmailLink(emailLink: string): boolean {
+    return isSignInWithEmailLink(auth, emailLink);
+  }
+
+  async signInWithEmailLink(email: string, emailLink: string): Promise<FirebaseUser> {
+    try {
+      const userCredential = await signInWithEmailLink(auth, email, emailLink);
+      
+      // Clear the email from localStorage
+      window.localStorage.removeItem('emailForSignIn');
+      
       return this.mapFirebaseUser(userCredential.user);
     } catch (error) {
       throw this.handleAuthError(error as AuthError);
