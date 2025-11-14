@@ -1,4 +1,5 @@
 import { auth } from '@/lib/config/firebase'
+import { cacheService } from './cacheService'
 
 const API_BASE_URL = '/api'
 
@@ -108,6 +109,19 @@ class AnalyticsService {
 
   async getDashboardAnalytics(): Promise<ApiResponse<DashboardAnalyticsResponse>> {
     try {
+      const userId = auth.currentUser?.uid
+      const cacheKey = `dashboard-analytics-${userId}`
+      
+      // Check cache first
+      const cached = cacheService.getDashboard(cacheKey)
+      if (cached) {
+        return {
+          success: true,
+          message: 'Dashboard analytics retrieved from cache',
+          data: cached
+        }
+      }
+      
       const headers = await this.getAuthHeaders()
       
       const response = await fetch(`${API_BASE_URL}/analytics/dashboard`, {
@@ -124,6 +138,12 @@ class AnalyticsService {
       }
 
       const data = await response.json()
+      
+      // Cache the result
+      if (data.success && data.data) {
+        cacheService.setDashboard(cacheKey, data.data)
+      }
+      
       return data
     } catch (error) {
       console.error('Error fetching dashboard analytics:', error)
@@ -142,6 +162,19 @@ class AnalyticsService {
 
   async getSummary(): Promise<ApiResponse<SummaryResponse>> {
     try {
+      const userId = auth.currentUser?.uid
+      const cacheKey = `summary-${userId}`
+      
+      // Check cache first
+      const cached = cacheService.getAnalytics(cacheKey)
+      if (cached) {
+        return {
+          success: true,
+          message: 'Summary retrieved from cache',
+          data: cached
+        }
+      }
+      
       const headers = await this.getAuthHeaders()
       
       const response = await fetch(`${API_BASE_URL}/analytics/summary`, {
@@ -158,6 +191,12 @@ class AnalyticsService {
       }
 
       const data = await response.json()
+      
+      // Cache the result
+      if (data.success && data.data) {
+        cacheService.setAnalytics(cacheKey, data.data)
+      }
+      
       return data
     } catch (error) {
       console.error('Error fetching summary:', error)
@@ -176,6 +215,19 @@ class AnalyticsService {
 
   async getExpenseBreakdown(): Promise<ApiResponse<ExpenseBreakdownResponse>> {
     try {
+      const userId = auth.currentUser?.uid
+      const cacheKey = `expense-breakdown-${userId}`
+      
+      // Check cache first
+      const cached = cacheService.getAnalytics(cacheKey)
+      if (cached) {
+        return {
+          success: true,
+          message: 'Expense breakdown retrieved from cache',
+          data: cached
+        }
+      }
+      
       const headers = await this.getAuthHeaders()
       
       const response = await fetch(`${API_BASE_URL}/analytics/expense-breakdown`, {
@@ -192,6 +244,12 @@ class AnalyticsService {
       }
 
       const data = await response.json()
+      
+      // Cache the result
+      if (data.success && data.data) {
+        cacheService.setAnalytics(cacheKey, data.data)
+      }
+      
       return data
     } catch (error) {
       console.error('Error fetching expense breakdown:', error)
@@ -210,6 +268,19 @@ class AnalyticsService {
 
   async getMonthlyTrends(months: number = 6): Promise<ApiResponse<MonthlyTrendsResponse>> {
     try {
+      const userId = auth.currentUser?.uid
+      const cacheKey = `monthly-trends-${months}-${userId}`
+      
+      // Check cache first
+      const cached = cacheService.getAnalytics(cacheKey)
+      if (cached) {
+        return {
+          success: true,
+          message: 'Monthly trends retrieved from cache',
+          data: cached
+        }
+      }
+      
       const headers = await this.getAuthHeaders()
       
       const response = await fetch(`${API_BASE_URL}/analytics/monthly-trends`, {
@@ -227,6 +298,12 @@ class AnalyticsService {
       }
 
       const data = await response.json()
+      
+      // Cache the result
+      if (data.success && data.data) {
+        cacheService.setAnalytics(cacheKey, data.data)
+      }
+      
       return data
     } catch (error) {
       console.error('Error fetching monthly trends:', error)
@@ -245,6 +322,19 @@ class AnalyticsService {
 
   async getSavingsRate(): Promise<ApiResponse<SavingsRateResponse>> {
     try {
+      const userId = auth.currentUser?.uid
+      const cacheKey = `savings-rate-${userId}`
+      
+      // Check cache first
+      const cached = cacheService.getAnalytics(cacheKey)
+      if (cached) {
+        return {
+          success: true,
+          message: 'Savings rate retrieved from cache',
+          data: cached
+        }
+      }
+      
       const headers = await this.getAuthHeaders()
       
       const response = await fetch(`${API_BASE_URL}/analytics/savings-rate`, {
@@ -261,6 +351,12 @@ class AnalyticsService {
       }
 
       const data = await response.json()
+      
+      // Cache the result
+      if (data.success && data.data) {
+        cacheService.setAnalytics(cacheKey, data.data)
+      }
+      
       return data
     } catch (error) {
       console.error('Error fetching savings rate:', error)

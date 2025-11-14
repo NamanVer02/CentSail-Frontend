@@ -8,6 +8,7 @@ import { auth, storage } from '@/lib/config/firebase'
 import { updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { toast } from '@/lib/utils/toast'
+import { cacheService } from '@/lib/services/cacheService'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -106,6 +107,8 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await firebaseAuthService.signOut()
+      // Clear all cache on logout to prevent data leakage
+      cacheService.clear()
       router.push('/login')
     } catch (error) {
       console.error('Logout failed:', error)

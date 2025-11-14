@@ -1,4 +1,5 @@
 import { auth } from '@/lib/config/firebase'
+import { cacheService } from './cacheService'
 
 // Route through Next.js rewrite proxy to avoid CORS/proxy issues
 const API_BASE_URL = '/api'
@@ -62,11 +63,26 @@ class CategoryService {
         await this.waitForAuth()
       }
       
+      const userId = auth.currentUser?.uid
+      
+      // Normalize type to uppercase for consistent caching
+      const normalizedType = type ? type.toUpperCase() : undefined
+      
+      // Check cache first
+      const cached = cacheService.getCategories(normalizedType, userId)
+      if (cached) {
+        return {
+          success: true,
+          message: 'Categories retrieved from cache',
+          data: cached
+        }
+      }
+      
       // Get the token explicitly to ensure it's available
       const token = await this.getFirebaseIdToken()
       
       // Convert type to uppercase (EXPENSE/INCOME) as backend expects
-      const requestBody = type ? { type: type.toUpperCase() } : {}
+      const requestBody = normalizedType ? { type: normalizedType } : {}
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -99,6 +115,12 @@ class CategoryService {
       // Backend returns { success, message, data: { categories: [...] } }
       // Transform to { success, message, data: [...] }
       const categories = data.data?.categories || (Array.isArray(data.data) ? data.data : [])
+      
+      // Cache the result
+      if (data.success === true || data.success === "true") {
+        cacheService.setCategories(categories, normalizedType, userId)
+      }
+      
       return {
         success: data.success === true || data.success === "true",
         message: data.message || '',
@@ -149,6 +171,13 @@ class CategoryService {
       }
 
       const data = await response.json()
+      
+      // Invalidate categories cache on create
+      if (data.success) {
+        const userId = auth.currentUser?.uid
+        cacheService.invalidateCategories(userId)
+      }
+      
       return data
     } catch (error) {
       if (error instanceof Error && error.message.includes('not authenticated')) {
@@ -194,6 +223,13 @@ class CategoryService {
       }
 
       const data = await response.json()
+      
+      // Invalidate categories cache on update
+      if (data.success) {
+        const userId = auth.currentUser?.uid
+        cacheService.invalidateCategories(userId)
+      }
+      
       return data
     } catch (error) {
       if (error instanceof Error && error.message.includes('not authenticated')) {
@@ -233,6 +269,13 @@ class CategoryService {
       }
 
       const data = await response.json()
+      
+      // Invalidate categories cache on delete
+      if (data.success) {
+        const userId = auth.currentUser?.uid
+        cacheService.invalidateCategories(userId)
+      }
+      
       return data
     } catch (error) {
       if (error instanceof Error && error.message.includes('not authenticated')) {
