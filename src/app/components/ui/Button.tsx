@@ -4,7 +4,7 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset'
   onClick?: () => void
   children: ReactNode
-  variant?: 'primary' | 'secondary'
+  variant?: 'primary' | 'secondary' | 'outline'
   className?: string
   disabled?: boolean
 }
@@ -21,7 +21,8 @@ export default function Button({
   
   const variantStyles = {
     primary: 'bg-white/90 text-[#0c504a] hover:bg-white focus:ring-2 focus:ring-white/50 shadow-lg',
-    secondary: 'text-white/80 hover:text-white'
+    secondary: 'text-white/80 hover:text-white',
+    outline: 'bg-transparent border-2 border-white/30 text-white hover:border-white/50 hover:bg-white/10'
   }
 
   return (

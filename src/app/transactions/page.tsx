@@ -8,6 +8,7 @@ import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
+import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 
 type EntryItem = {
   id: string
@@ -20,6 +21,7 @@ type EntryItem = {
 
 export default function TransactionsPage() {
   const router = useRouter()
+  const scrollProgress = useScrollActivation(50)
   const [entries, setEntries] = useState<EntryItem[]>([])
   const [page, setPage] = useState(1)
   const pageSize = 20
@@ -104,6 +106,22 @@ export default function TransactionsPage() {
     categories.forEach(c => m.set(c.id, c))
     return m
   }, [categories])
+
+  // Filter categories based on selected type for the dropdown
+  const filteredCategories = useMemo(() => {
+    if (!type) return categories
+    return categories.filter(c => c.type === type)
+  }, [categories, type])
+
+  // If current selected category does not match the selected type, clear it
+  useEffect(() => {
+    if (!categoryId) return
+    const selected = categories.find(c => c.id === categoryId)
+    if (!selected) return
+    if (type && selected.type !== type) {
+      setCategoryId('')
+    }
+  }, [type, categoryId, categories])
 
   // Wait for Firebase auth to initialize and return a UID
   const waitForAuthUid = (): Promise<string> => {
@@ -208,11 +226,21 @@ export default function TransactionsPage() {
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
       <div className="max-w-6xl mx-auto px-6 py-6 pb-24">
         {/* Header */}
-        <div className="flex items-center mb-6">
+      <div className="fixed top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-6xl mx-4 mt-3 px-6 py-4 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
+          style={{
+            backgroundColor: `rgba(12, 80, 74, ${0.35 + scrollProgress * 0.45})`,
+            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
+            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
+          }}
+        >
           <button onClick={() => router.back()} className="text-2xl mr-4"><FiArrowLeft /></button>
           <h1 className="text-2xl font-bold">All Transactions</h1>
         </div>
+      </div>
 
+      <div className="pt-24">
         {/* Search and Filters */}
         <div className="mb-6">
           <div className="relative mb-4">
@@ -241,7 +269,7 @@ export default function TransactionsPage() {
               className="bg-white/10 border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
             >
               <option value="">All Categories</option>
-              {categories.map(c => (
+              {filteredCategories.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
@@ -259,6 +287,7 @@ export default function TransactionsPage() {
             />
           </div>
         </div>
+      </div>
 
         {/* Transaction List */}
         <div className="space-y-3">

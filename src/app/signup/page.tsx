@@ -1,115 +1,97 @@
-'use client'
+"use client"
 
-import { useState, ChangeEvent, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
-import Input from '@/app/components/ui/Input'
-import Button from '@/app/components/ui/Button'
-import { useAuth } from '@/lib/hooks/useAuth'
-import { toast } from '@/lib/utils/toast'
+import { FormEvent, useState } from "react"
+import { useRouter } from "next/navigation"
+import { firebaseAuthService } from "@/lib/services/firebaseAuthService"
+import { authService } from "@/lib/services/authService"
+import { toast } from "@/lib/utils/toast"
+import Input from "@/app/components/ui/Input"
+import Button from "@/app/components/ui/Button"
 
 export default function SignupPage() {
   const router = useRouter()
-  const { signUp, isLoading, error, clearError } = useAuth()
-  
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    agreeToTerms: false
-  })
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const handleEmailSignup = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
-    }))
-    
-    // Clear validation error for this field
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({ ...prev, [name]: '' }))
-    }
-    
-    // Clear API error when user starts typing
-    if (error) {
-      clearError()
-    }
-  }
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {}
-    
-    if (!formData.fullName.trim()) {
-      errors.fullName = 'Full name is required'
-    }
-    
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid'
-    }
-    
-    if (!formData.password) {
-      errors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters'
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "Passwords don't match"
-    }
-    
-    if (!formData.agreeToTerms) {
-      errors.agreeToTerms = 'Please agree to terms and conditions'
-    }
-    
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Please enter name, email, and password")
       return
     }
-    
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+
+    setIsLoading(true)
+    setError("")
+
     try {
-      const success = await signUp({
-        email: formData.email.trim(),
-        password: formData.password,
-        displayName: formData.fullName.trim(),
-      })
-      
-      if (success) {
-        toast.success('Account created successfully! Redirecting...')
-        
-        // Redirect to dashboard
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 1000)
+      const user = await firebaseAuthService.signUp(email.trim(), password, name.trim())
+
+      try {
+        await authService.signup({
+          username: name.trim(),
+          email: user.email || email.trim(),
+          password,
+          uid: user.uid,
+        })
+      } catch (backendErr) {
+        console.log("Backend signup:", backendErr)
       }
-    } catch (err) {
-      console.error('Signup error:', err)
+
+      toast.success("Account created successfully!")
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message || "Failed to create account")
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleSignup = async () => {
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const user = await firebaseAuthService.signInWithGoogle()
+
+      if (user.email) {
+        try {
+          await authService.signup({
+            username: user.displayName || user.email.split("@")[0],
+            email: user.email,
+            password: "",
+            uid: user.uid,
+          })
+        } catch (backendErr) {
+          console.log("Backend signup:", backendErr)
+        }
+      }
+
+      toast.success("Account created successfully!")
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message || "Failed to sign up with Google")
+      setIsLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] flex items-center justify-center p-6 md:p-8 relative overflow-hidden">
-      {/* Decorative dots pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-full h-48 bg-[radial-gradient(circle,_rgba(255,255,255,0.3)_1px,_transparent_1px)] bg-[size:20px_20px]"></div>
       </div>
 
-      <div className="w-full max-w-md space-y-8 relative z-10 px-4">
-        {/* Logo and App Name */}
+      <div className="w-full max-w-md space-y-6 relative z-10 px-4">
         <div className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-20 h-20 flex items-center justify-center">
-              {/* Sailboat Logo */}
               <svg viewBox="0 0 100 100" className="w-full h-full text-white">
                 <path d="M 50 20 L 50 60 L 75 60 Z" fill="currentColor" />
                 <ellipse cx="50" cy="70" rx="20" ry="4" fill="currentColor" />
@@ -120,130 +102,82 @@ export default function SignupPage() {
               </svg>
             </div>
           </div>
-          
+
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-wide">
-              CentSail
-            </h1>
-            <p className="text-white/70 text-sm mt-2">Your Financial Voyage</p>
+            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-wide">CentSail</h1>
+            <p className="text-white/70 text-sm mt-2">Create your CentSail account</p>
           </div>
         </div>
 
-        {/* Welcome Text */}
-        <div className="text-center pt-4">
-          <h2 className="text-2xl font-semibold text-white">Create Account</h2>
-        </div>
-
-        {/* Signup Form Container */}
-        <div className="space-y-6 pt-2">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Full Name Input */}
-            <div>
-              <Input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="Full name"
-                required
-              />
-              {validationErrors.fullName && (
-                <p className="text-red-400 text-xs mt-1 px-1">{validationErrors.fullName}</p>
-              )}
-            </div>
-
-            {/* Email Input */}
-            <div>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Email address"
-                required
-              />
-              {validationErrors.email && (
-                <p className="text-red-400 text-xs mt-1 px-1">{validationErrors.email}</p>
-              )}
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <Input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Password"
-                required
-              />
-              {validationErrors.password && (
-                <p className="text-red-400 text-xs mt-1 px-1">{validationErrors.password}</p>
-              )}
-            </div>
-
-            {/* Confirm Password Input */}
-            <div>
-              <Input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm password"
-                required
-              />
-              {validationErrors.confirmPassword && (
-                <p className="text-red-400 text-xs mt-1 px-1">{validationErrors.confirmPassword}</p>
-              )}
-            </div>
-
-            {/* Terms & Conditions */}
-            <div className="flex items-start text-sm px-1">
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onChange={handleChange}
-                  className="w-4 h-4 mt-0.5 rounded border-2 border-white/40 bg-transparent checked:bg-white checked:border-white focus:ring-0 focus:ring-offset-0 cursor-pointer accent-white"
-                  required
-                />
-                <span className="text-white/80">
-                  I agree to the{' '}
-                  <button type="button" className="text-white hover:underline">
-                    Terms and Conditions
-                  </button>
-                </span>
-              </label>
-              {validationErrors.agreeToTerms && (
-                <p className="text-red-400 text-xs mt-1 px-1">{validationErrors.agreeToTerms}</p>
-              )}
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 space-y-6">
+          <form onSubmit={handleEmailSignup} className="space-y-4">
+            <Input
+              type="text"
+              id="signup-name"
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Full name"
+              required
+            />
+            <Input
+              type="email"
+              id="signup-email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              required
+            />
+            <Input
+              type="password"
+              id="signup-password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+            />
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
-          {/* Login Link */}
-          <div className="text-center text-sm text-white/70 pb-4">
-            Already have an account?{' '}
-            <a href="/login" className="text-white font-medium hover:underline">
-              Sign in
-            </a>
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <span className="w-full border-t border-white/20" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-[rgba(0,0,0,0.2)] px-3 text-white/70">or continue with</span>
+            </div>
           </div>
+
+          <button
+            onClick={handleGoogleSignup}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-colors border border-white/20 disabled:opacity-50"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span className="text-white font-medium">Continue with Google</span>
+          </button>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="text-center text-sm text-white/70">
+          Already have an account?{' '}
+          <a href="/login" className="text-white font-medium hover:underline">
+            Sign in
+          </a>
         </div>
       </div>
     </div>

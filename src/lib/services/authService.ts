@@ -4,8 +4,9 @@ const API_BASE_URL = '/api'
 export interface SignupPayload {
   username: string
   email: string
-  password: string
+  password?: string
   mobileNumber?: string
+  uid?: string
 }
 
 export interface ApiResponse<T = unknown> {

@@ -1,0 +1,70 @@
+import { auth } from '@/lib/config/firebase'
+
+const API_BASE_URL = '/api'
+
+export interface ChatHistoryTurn {
+  role: 'USER' | 'ASSISTANT'
+  content: string
+}
+
+export interface ChatRequest {
+  question: string
+  startDate?: string
+  endDate?: string
+  type?: string
+  categoryId?: string
+  history?: ChatHistoryTurn[]
+}
+
+export interface ChatResponse {
+  success: boolean
+  answer?: string
+}
+
+class ChatService {
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    const token = await this.getFirebaseIdToken()
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  }
+
+  private async getFirebaseIdToken(): Promise<string> {
+    const user = auth.currentUser
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+    try {
+      const token = await user.getIdToken()
+      return token
+    } catch (error) {
+      console.error('Error getting Firebase ID token:', error)
+      throw new Error('Failed to get authentication token')
+    }
+  }
+
+  async query(req: ChatRequest): Promise<ChatResponse> {
+    try {
+      const headers = await this.getAuthHeaders()
+      const response = await fetch(`${API_BASE_URL}/chat/query`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(req)
+      })
+      if (!response.ok) {
+        await response.text().catch(() => '')
+        return { success: false }
+      }
+      const data = await response.json()
+      return data as ChatResponse
+    } catch (error) {
+      console.error('Error querying chat:', error)
+      return { success: false }
+    }
+  }
+}
+
+export const chatService = new ChatService()
+
+

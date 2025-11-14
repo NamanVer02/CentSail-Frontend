@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { FiArrowLeft, FiPlus, FiEdit2, FiTrash2, FiX, FiTag } from 'react-icons/fi'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { toast } from '@/lib/utils/toast'
+import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 
 export default function CategoriesManagementPage() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function CategoriesManagementPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [formData, setFormData] = useState({ name: '', type: 'EXPENSE', color: '#6366f1', description: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const scrollProgress = useScrollActivation(50)
 
   const colorOptions = [
     '#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7',
@@ -54,6 +56,15 @@ export default function CategoriesManagementPage() {
   const handleCreate = async () => {
     if (!formData.name.trim()) {
       toast.error('Category name is required')
+      return
+    }
+
+    // Client-side limit guard (backend also enforces)
+    const currentCount = formData.type === 'EXPENSE'
+      ? categories.filter(c => c.type === 'EXPENSE').length
+      : categories.filter(c => c.type === 'INCOME').length
+    if (currentCount >= 10) {
+      toast.error(`You can create up to 10 ${formData.type.toLowerCase()} categories.`)
       return
     }
 
@@ -154,12 +165,20 @@ export default function CategoriesManagementPage() {
 
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
   const incomeCategories = categories.filter(c => c.type === 'INCOME')
+  const reachedLimit = (formData.type === 'EXPENSE' ? expenseCategories.length : incomeCategories.length) >= 10
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white pb-32">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 bg-transparent z-10">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center">
+      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
+          style={{
+            backgroundColor: `rgba(12, 80, 74, ${0.4 + scrollProgress * 0.4})`,
+            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
+            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
+          }}
+        >
           <button 
             onClick={() => router.back()} 
             className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2"
@@ -170,15 +189,53 @@ export default function CategoriesManagementPage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-20 pb-8">
-        <div className="mb-6 flex justify-end">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-[#0c504a] rounded-xl font-semibold hover:bg-white/90 transition-colors"
-          >
-            <FiPlus />
-            <span>Add Category</span>
-          </button>
+      <div className="max-w-md mx-auto px-4 pt-28 pb-24">
+        {/* Limits Progress */}
+        <div className="mb-6 bg-white/5 rounded-2xl border border-white/10 p-4 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center">
+                <FiTag className="text-white/80" />
+              </div>
+              <h3 className="text-base font-semibold">Category Limits</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] px-2 py-1 rounded-full bg-red-500/20 text-red-200 border border-red-500/30">
+                {expenseCategories.length}/10 Expense
+              </span>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-green-500/20 text-green-200 border border-green-500/30">
+                {incomeCategories.length}/10 Income
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-white/80">Expense Categories</span>
+                <span className="text-xs text-white/60">{10 - expenseCategories.length} remaining</span>
+              </div>
+              <div className="h-3 bg-white/10 rounded-full overflow-hidden border border-white/10">
+                <div
+                  className="h-3 rounded-full bg-gradient-to-r from-red-400 to-red-300"
+                  style={{ width: `${Math.min(100, (expenseCategories.length / 10) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-white/80">Income Categories</span>
+                <span className="text-xs text-white/60">{10 - incomeCategories.length} remaining</span>
+              </div>
+              <div className="h-3 bg-white/10 rounded-full overflow-hidden border border-white/10">
+                <div
+                  className="h-3 rounded-full bg-gradient-to-r from-green-400 to-green-300"
+                  style={{ width: `${Math.min(100, (incomeCategories.length / 10) * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -286,6 +343,15 @@ export default function CategoriesManagementPage() {
         )}
       </div>
 
+      {/* Floating Add Button */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-white text-[#0c504a] shadow-xl flex items-center justify-center hover:scale-110 transition-all"
+        aria-label="Add Category"
+      >
+        <FiPlus className="text-2xl" />
+      </button>
+
       {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -345,6 +411,11 @@ export default function CategoriesManagementPage() {
                     Income
                   </button>
                 </div>
+                {reachedLimit && (
+                  <p className="mt-2 text-xs text-yellow-300/80">
+                    You have reached the limit of 10 {formData.type.toLowerCase()} categories.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -392,7 +463,7 @@ export default function CategoriesManagementPage() {
                 <button
                   type="button"
                   onClick={showEditModal ? handleUpdate : handleCreate}
-                  disabled={isSubmitting || !formData.name.trim()}
+                  disabled={isSubmitting || !formData.name.trim() || (!showEditModal && reachedLimit)}
                   className="flex-1 py-3 px-4 bg-white text-[#0c504a] rounded-xl font-semibold hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Saving...' : showEditModal ? 'Update' : 'Create'}

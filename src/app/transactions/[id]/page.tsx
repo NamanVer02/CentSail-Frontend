@@ -7,10 +7,12 @@ import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
+import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 
 export default function TransactionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const { id } = use(params)
+  const scrollProgress = useScrollActivation(50)
   const [entry, setEntry] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
@@ -206,8 +208,15 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 bg-transparent z-10">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="fixed top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center justify-between rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
+          style={{
+            backgroundColor: `rgba(12, 80, 74, ${0.4 + scrollProgress * 0.4})`,
+            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
+            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
+          }}
+        >
           <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiArrowLeft /></button>
           <h1 className="text-lg font-semibold truncate">{entry.title}</h1>
           {!isEditing ? (
@@ -218,7 +227,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      <div className="max-w-md mx-auto pt-20 px-4">
+      <div className="max-w-md mx-auto pt-32 px-4">
         {/* Amount */}
         <div className="flex flex-col items-center justify-center py-8">
             <div className={`text-6xl p-5 rounded-full mb-4 bg-gradient-to-tr ${isIncome ? 'from-green-400/20 to-green-500/10' : 'from-white/20 to-white/10'}`}>💸</div>
