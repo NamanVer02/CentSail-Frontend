@@ -10,7 +10,7 @@ interface CacheEntry<T> {
 }
 
 class CacheService {
-  private cache: Map<string, CacheEntry<any>> = new Map()
+  private cache: Map<string, CacheEntry<any>>
   
   // Default TTL values (in milliseconds)
   private readonly DEFAULT_TTL = {
@@ -20,8 +20,28 @@ class CacheService {
     DASHBOARD: 2 * 60 * 1000, // 2 minutes
   }
 
+  constructor() {
+    // Use a global cache to persist across hot reloads in development
+    if (typeof window !== 'undefined') {
+      // @ts-ignore - Add cache to window for persistence
+      if (!window.__cacheServiceInstance) {
+        this.cache = new Map()
+        // @ts-ignore
+        window.__cacheServiceInstance = this.cache
+      } else {
+        // Reuse existing cache from previous hot reload
+        // @ts-ignore
+        this.cache = window.__cacheServiceInstance
+      }
+    } else {
+      // Server-side: create new Map
+      this.cache = new Map()
+    }
+  }
+
   /**
    * Generate a cache key from parameters
+   * Uses consistent serialization to ensure keys match between get and set
    */
   private generateKey(prefix: string, params?: Record<string, any>): string {
     if (!params || Object.keys(params).length === 0) {
@@ -37,6 +57,15 @@ class CacheService {
           // Normalize type to uppercase for consistency
           if (key === 'type' && typeof value === 'string') {
             normalizedParams[key] = value.toUpperCase()
+          } else if (typeof value === 'object' && !Array.isArray(value)) {
+            // For objects, sort keys and stringify consistently
+            const sortedObj: Record<string, any> = {}
+            Object.keys(value).sort().forEach(k => {
+              if (value[k] !== undefined && value[k] !== null) {
+                sortedObj[k] = value[k]
+              }
+            })
+            normalizedParams[key] = sortedObj
           } else {
             normalizedParams[key] = value
           }
@@ -47,23 +76,49 @@ class CacheService {
       return prefix
     }
     
+    // Use consistent serialization
+    // For strings, we'll use the value directly (no quotes) to avoid escape sequence issues
+    // For other types, use JSON.stringify
     const sortedParams = Object.keys(normalizedParams)
       .sort()
-      .map(key => `${key}:${JSON.stringify(normalizedParams[key])}`)
+      .map(key => {
+        const value = normalizedParams[key]
+        let serialized: string
+        if (typeof value === 'string') {
+          // For strings, use the value directly without JSON.stringify to avoid quote issues
+          serialized = value
+        } else {
+          // For other types (numbers, booleans, objects), use JSON.stringify
+          serialized = JSON.stringify(value)
+        }
+        return `${key}:${serialized}`
+      })
       .join('|')
-    return `${prefix}|${sortedParams}`
+    const key = `${prefix}|${sortedParams}`
+    
+    return key
   }
 
   /**
    * Get data from cache if available and not expired
    */
   get<T>(key: string): T | null {
+    // Verify cache instance is correct
+    const cacheSize = this.cache.size
+    if (cacheSize === 0) {
+      // Check if we lost the cache reference
+      if (typeof window !== 'undefined') {
+        // @ts-ignore
+        const globalCache = window.__cacheServiceInstance
+        if (globalCache && globalCache.size > 0) {
+          this.cache = globalCache
+        }
+      }
+    }
+    
     const entry = this.cache.get(key)
     
     if (!entry) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Cache MISS] ${key}`)
-      }
       return null
     }
 
@@ -72,15 +127,9 @@ class CacheService {
 
     if (isExpired) {
       this.cache.delete(key)
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Cache EXPIRED] ${key}`)
-      }
       return null
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Cache HIT] ${key}`)
-    }
     return entry.data as T
   }
 
@@ -88,15 +137,21 @@ class CacheService {
    * Set data in cache with TTL
    */
   set<T>(key: string, data: T, ttl?: number): void {
+    // Ensure we're using the persistent cache instance
+    if (typeof window !== 'undefined') {
+      // @ts-ignore
+      const globalCache = window.__cacheServiceInstance
+      if (globalCache && globalCache !== this.cache) {
+        this.cache = globalCache
+      }
+    }
+    
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
       ttl: ttl || this.DEFAULT_TTL.ENTRIES
     }
     this.cache.set(key, entry)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Cache SET] ${key}`, { ttl: entry.ttl / 1000 + 's' })
-    }
   }
 
   /**
@@ -124,6 +179,16 @@ class CacheService {
    */
   clear(): void {
     this.cache.clear()
+  }
+
+  /**
+   * Get cache statistics (for debugging)
+   */
+  getStats(): { size: number; keys: string[] } {
+    return {
+      size: this.cache.size,
+      keys: Array.from(this.cache.keys())
+    }
   }
 
   /**
@@ -199,5 +264,25 @@ class CacheService {
   }
 }
 
-export const cacheService = new CacheService()
+// Create singleton instance
+// In Next.js, modules can be re-evaluated during hot reloading
+// We use a global cache stored on window to persist across hot reloads
+let cacheServiceInstance: CacheService | null = null
+
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  if (!window.__cacheService) {
+    cacheServiceInstance = new CacheService()
+    // @ts-ignore
+    window.__cacheService = cacheServiceInstance
+  } else {
+    // @ts-ignore
+    cacheServiceInstance = window.__cacheService
+  }
+} else {
+  // Server-side: create new instance
+  cacheServiceInstance = new CacheService()
+}
+
+export const cacheService = cacheServiceInstance!
 

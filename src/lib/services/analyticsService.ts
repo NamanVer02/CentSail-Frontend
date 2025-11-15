@@ -110,15 +110,20 @@ class AnalyticsService {
   async getDashboardAnalytics(): Promise<ApiResponse<DashboardAnalyticsResponse>> {
     try {
       const userId = auth.currentUser?.uid
-      const cacheKey = `dashboard-analytics-${userId}`
       
-      // Check cache first
-      const cached = cacheService.getDashboard(cacheKey)
-      if (cached) {
-        return {
-          success: true,
-          message: 'Dashboard analytics retrieved from cache',
-          data: cached
+      if (!userId) {
+        // If no userId, proceed without cache
+      } else {
+        const cacheKey = `dashboard-analytics-${userId}`
+        
+        // Check cache first
+        const cached = cacheService.getDashboard(cacheKey)
+        if (cached) {
+          return {
+            success: true,
+            message: 'Dashboard analytics retrieved from cache',
+            data: cached
+          }
         }
       }
       
@@ -139,8 +144,9 @@ class AnalyticsService {
 
       const data = await response.json()
       
-      // Cache the result
-      if (data.success && data.data) {
+      // Cache the result (reuse userId from above)
+      if (data.success && data.data && userId) {
+        const cacheKey = `dashboard-analytics-${userId}`
         cacheService.setDashboard(cacheKey, data.data)
       }
       

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { firebaseAuthService } from "@/lib/services/firebaseAuthService"
+import { authService } from "@/lib/services/authService"
 import { toast } from "@/lib/utils/toast"
 import Input from "@/app/components/ui/Input"
 import Button from "@/app/components/ui/Button"
@@ -40,8 +41,31 @@ export default function LoginPage() {
     setError("")
 
     try {
-      await firebaseAuthService.signInWithGoogle()
-      toast.success("Login successful!")
+      const result = await firebaseAuthService.signInWithGoogle()
+      const { user, isNewUser } = result
+
+      // Always call backend signup to ensure user exists in backend and has default categories
+      // The backend's ensureDefaultCategories is idempotent, so it's safe to call multiple times
+      if (user.email) {
+        try {
+          const signupResponse = await authService.signup({
+            username: user.displayName || user.email.split("@")[0],
+            email: user.email,
+            password: "",
+            uid: user.uid,
+          })
+
+          if (!signupResponse.success) {
+            console.error("Backend signup failed:", signupResponse.message)
+            // Continue anyway - user is authenticated in Firebase
+          }
+        } catch (backendErr) {
+          console.error("Backend signup error:", backendErr)
+          // Continue anyway - user is authenticated in Firebase
+        }
+      }
+
+      toast.success(isNewUser ? "Account created successfully!" : "Login successful!")
       router.push("/dashboard")
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google")

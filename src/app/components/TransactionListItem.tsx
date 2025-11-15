@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { FiTag } from 'react-icons/fi'
 import { Category } from '@/lib/services/categoryService'
+import { getCategoryIcon } from '@/lib/utils/categoryIcons'
 
 interface TransactionListItemProps {
   id: string
@@ -30,6 +30,7 @@ export default function TransactionListItem({
   const category = categoryIdToCategory.get(categoryId)
   const categoryColor = category?.color || '#6366f1'
   const categoryName = categoryIdToName.get(categoryId) || 'Category'
+
   const dateObj = parseDate(date)
   const formattedDate = dateObj ? (() => {
     const day = String(dateObj.getDate()).padStart(2, '0')
@@ -47,7 +48,9 @@ export default function TransactionListItem({
             className="w-12 h-12 rounded-full flex items-center justify-center text-white border-2 border-white/20"
             style={{ backgroundColor: categoryColor + '40' }}
           >
-            <FiTag className="text-lg" />
+            <span className="text-lg">
+              {getCategoryIcon(category)}
+            </span>
           </div>
           <div>
             <p className="font-medium text-sm text-white">{title}</p>

@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
-import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiUser, FiBell, FiArrowUp, FiArrowDown } from 'react-icons/fi'
+import { FiPlus, FiRepeat, FiUser, FiBell, FiArrowUp, FiArrowDown, FiBarChart2, FiTarget } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { analyticsService, CategoryExpenseData } from '@/lib/services/analyticsService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
+import { getCategoryIcon, getCategoryIconById } from '@/lib/utils/categoryIcons'
+import Silk from '@/components/Silk'
 
 export default function DashboardPage() {
   const [greeting] = useState(() => {
@@ -51,70 +53,14 @@ export default function DashboardPage() {
   const [totalIncome, setTotalIncome] = useState<number>(0)
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [loadingAnalytics, setLoadingAnalytics] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
 
-  // Icon mapping for categories - try explicit names, then keyword fallbacks, then a stable hash-based fallback
-  const getCategoryIcon = (categoryName: string) => {
-    const name = categoryName.trim().toLowerCase()
-    // Explicit common categories
-    const explicit: Record<string, JSX.Element> = {
-      'groceries': <FiShoppingCart />,
-      'grocery': <FiShoppingCart />,
-      'food': <FiShoppingCart />,
-      'restaurants': <FiShoppingCart />,
-      'restaurant': <FiShoppingCart />,
-      'transport': <FiSend />,
-      'taxi': <FiSend />,
-      'uber': <FiSend />,
-      'bus': <FiSend />,
-      'fuel': <FiSend />,
-      'gas': <FiSend />,
-      'entertainment': <FiFilm />,
-      'movies': <FiFilm />,
-      'movie': <FiFilm />,
-      'games': <FiFilm />,
-      'game': <FiFilm />,
-      'shopping': <FiShoppingBag />,
-      'clothes': <FiShoppingBag />,
-      'fashion': <FiShoppingBag />,
-      'internet': <FiGlobe />,
-      'wifi': <FiGlobe />,
-      'network': <FiGlobe />,
-      'sports': <FiAward />,
-      'sport': <FiAward />,
-      'fitness': <FiAward />,
-      'gym': <FiAward />,
-      'alcohol': <FiAlertTriangle />,
-      'drinks': <FiAlertTriangle />,
-      'drink': <FiAlertTriangle />,
-      'bar': <FiAlertTriangle />,
-      'watch': <FiWatch />,
-      'time': <FiWatch />,
-      'investments': <FiTrendingUp />,
-      'investment': <FiTrendingUp />,
-      'salary': <FiTrendingUp />,
-      'income': <FiTrendingUp />
-    }
-    if (explicit[name]) return explicit[name]
-    // Keyword fallbacks
-    if (name.includes('food') || name.includes('grocery') || name.includes('restaurant')) return <FiShoppingCart />
-    if (name.includes('transport') || name.includes('taxi') || name.includes('uber') || name.includes('fuel')) return <FiSend />
-    if (name.includes('entertainment') || name.includes('movie') || name.includes('game')) return <FiFilm />
-    if (name.includes('shopping') || name.includes('clothes') || name.includes('fashion')) return <FiShoppingBag />
-    if (name.includes('internet') || name.includes('wifi') || name.includes('network')) return <FiGlobe />
-    if (name.includes('sport') || name.includes('fitness') || name.includes('gym')) return <FiAward />
-    if (name.includes('alcohol') || name.includes('drink') || name.includes('bar')) return <FiAlertTriangle />
-    if (name.includes('watch') || name.includes('time')) return <FiWatch />
-    if (name.includes('invest') || name.includes('salary') || name.includes('income')) return <FiTrendingUp />
-    // Stable fallback so different unmatched categories don't use the exact same icon
-    const pool = [<FiShoppingCart />, <FiSend />, <FiFilm />, <FiShoppingBag />, <FiGlobe />, <FiAward />, <FiAlertTriangle />, <FiWatch />, <FiBarChart2 />, <FiTarget />]
-    let hash = 0
-    for (let i = 0; i < name.length; i++) {
-      hash = ((hash << 5) - hash) + name.charCodeAt(i)
-      hash |= 0
-    }
-    const index = Math.abs(hash) % pool.length
-    return pool[index]
-  }
+  // Map category names to category objects for icon lookup
+  const categoryNameToCategory = useMemo(() => {
+    const m = new Map<string, Category>()
+    categories.forEach(c => m.set(c.name, c))
+    return m
+  }, [categories])
 
   // Transform analytics data for radar chart
   const expenseData = useMemo(() => {
@@ -123,13 +69,17 @@ export default function DashboardPage() {
     }
     
     // Calculate percentage for each category
-    return analyticsData.map(item => ({
-      label: item.categoryName,
-      value: totalExpenses > 0 ? Math.round((item.amount / totalExpenses) * 100) : 0,
-      icon: getCategoryIcon(item.categoryName),
-      amount: item.amount
-    }))
-  }, [analyticsData, totalExpenses])
+    return analyticsData.map(item => {
+      // Find category by name to get the stored icon
+      const category = categoryNameToCategory.get(item.categoryName)
+      return {
+        label: item.categoryName,
+        value: totalExpenses > 0 ? Math.round((item.amount / totalExpenses) * 100) : 0,
+        icon: getCategoryIcon(category),
+        amount: item.amount
+      }
+    })
+  }, [analyticsData, totalExpenses, categoryNameToCategory])
 
   // Recent transactions from backend
   type RecentEntry = {
@@ -142,7 +92,6 @@ export default function DashboardPage() {
   }
   const [recentTransactions, setRecentTransactions] = useState<RecentEntry[]>([])
   const [loadingRecent, setLoadingRecent] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
 
   const waitForAuthUid = (): Promise<string> => new Promise((resolve, reject) => {
     const unsub = auth.onAuthStateChanged((user) => {
@@ -238,10 +187,16 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] relative overflow-hidden">
-      {/* Decorative background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-64 bg-[radial-gradient(circle,_rgba(255,255,255,0.3)_1px,_transparent_1px)] bg-[size:20px_20px]"></div>
+    <div className="min-h-screen w-full relative overflow-hidden">
+      {/* Silk Background */}
+      <div className="fixed inset-0 z-0 w-full h-full">
+        <Silk
+          speed={5}
+          scale={0.9}
+          color="#575459"
+          noiseIntensity={1.3}
+          rotation={0}
+        />
       </div>
 
       {/* Main Content */}

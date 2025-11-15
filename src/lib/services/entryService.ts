@@ -136,14 +136,26 @@ class EntryService {
       if (!userId) {
         // If still no userId, proceed without cache
       } else {
+        // Normalize listRequest for consistent cache keys
+        const cacheParams = {
+          userId,
+          page: listRequest.page || 1,
+          pageSize: listRequest.pageSize || 10,
+          sortBy: listRequest.sortBy || 'date',
+          sortOrder: listRequest.sortOrder || 'desc',
+          type: listRequest.type,
+          categoryId: listRequest.categoryId,
+          startDate: listRequest.startDate,
+          endDate: listRequest.endDate,
+          minAmount: listRequest.minAmount,
+          maxAmount: listRequest.maxAmount,
+          searchTerm: listRequest.searchTerm
+        }
+        
         // Check cache first
-        const cached = cacheService.getEntries({ ...listRequest, userId })
+        const cached = cacheService.getEntries(cacheParams)
         if (cached) {
-          return {
-            success: true,
-            message: 'Entries retrieved from cache',
-            data: cached
-          }
+          return cached as ApiResponse<Entry[]>
         }
       }
       
@@ -166,9 +178,23 @@ class EntryService {
 
       const data = await response.json()
       
-      // Cache the result (only if we have userId)
+      // Cache the result (only if we have userId and success)
       if (data.success && userId) {
-        cacheService.setEntries(data, { ...listRequest, userId })
+        const cacheParams = {
+          userId,
+          page: listRequest.page || 1,
+          pageSize: listRequest.pageSize || 10,
+          sortBy: listRequest.sortBy || 'date',
+          sortOrder: listRequest.sortOrder || 'desc',
+          type: listRequest.type,
+          categoryId: listRequest.categoryId,
+          startDate: listRequest.startDate,
+          endDate: listRequest.endDate,
+          minAmount: listRequest.minAmount,
+          maxAmount: listRequest.maxAmount,
+          searchTerm: listRequest.searchTerm
+        }
+        cacheService.setEntries(data, cacheParams)
       }
       
       return data

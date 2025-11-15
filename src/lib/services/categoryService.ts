@@ -10,6 +10,7 @@ export interface Category {
   type: string
   color: string
   description?: string
+  icon?: string // Icon identifier
 }
 
 export interface ApiResponse<T> {
@@ -65,16 +66,20 @@ class CategoryService {
       
       const userId = auth.currentUser?.uid
       
-      // Normalize type to uppercase for consistent caching
+      // Normalize type to uppercase for consistent caching (do this outside the if block)
       const normalizedType = type ? type.toUpperCase() : undefined
       
-      // Check cache first
-      const cached = cacheService.getCategories(normalizedType, userId)
-      if (cached) {
-        return {
-          success: true,
-          message: 'Categories retrieved from cache',
-          data: cached
+      if (!userId) {
+        // If no userId, proceed without cache
+      } else {
+        // Check cache first
+        const cached = cacheService.getCategories(normalizedType, userId)
+        if (cached) {
+          return {
+            success: true,
+            message: 'Categories retrieved from cache',
+            data: cached
+          }
         }
       }
       
@@ -118,7 +123,9 @@ class CategoryService {
       
       // Cache the result
       if (data.success === true || data.success === "true") {
-        cacheService.setCategories(categories, normalizedType, userId)
+        if (userId) {
+          cacheService.setCategories(categories, normalizedType, userId)
+        }
       }
       
       return {
@@ -147,6 +154,7 @@ class CategoryService {
     type: string
     color: string
     description?: string
+    icon?: string
   }): Promise<ApiResponse<Category>> {
     try {
       // Wait for authentication if user is not immediately available
@@ -199,6 +207,7 @@ class CategoryService {
     type: string
     color: string
     description?: string
+    icon?: string
   }): Promise<ApiResponse<Category>> {
     try {
       // Wait for authentication if user is not immediately available

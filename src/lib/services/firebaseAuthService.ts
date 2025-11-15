@@ -89,11 +89,19 @@ export class FirebaseAuthService {
     }
   }
 
-  async signInWithGoogle(): Promise<FirebaseUser> {
+  async signInWithGoogle(): Promise<{ user: FirebaseUser; isNewUser: boolean }> {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      return this.mapFirebaseUser(userCredential.user);
+      
+      // Check if this is a new user (first time signing in)
+      // Firebase's additionalUserInfo is available in the result
+      const isNewUser = (userCredential as any).additionalUserInfo?.isNewUser ?? false;
+      
+      return {
+        user: this.mapFirebaseUser(userCredential.user),
+        isNewUser
+      };
     } catch (error) {
       throw this.handleAuthError(error as AuthError);
     }

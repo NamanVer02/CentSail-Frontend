@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiPlus, FiMinus, FiDollarSign, FiCalendar, FiTag, FiEdit3, FiCheck, FiX } from 'react-icons/fi'
+import { FiArrowLeft, FiPlus, FiMinus, FiDollarSign, FiCalendar, FiEdit3, FiCheck, FiX } from 'react-icons/fi'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { entryService } from '@/lib/services/entryService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import { getCategoryIcon, getIconByName, availableIcons } from '@/lib/utils/categoryIcons'
 
 export default function AddTransactionPage() {
   const router = useRouter()
@@ -25,7 +26,13 @@ export default function AddTransactionPage() {
   const [categoryError, setCategoryError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCreateCategory, setShowCreateCategory] = useState(false)
-  const [newCategory, setNewCategory] = useState({ name: '', color: '#6366f1' })
+  const [newCategory, setNewCategory] = useState({ 
+    name: '', 
+    type: transactionType.toUpperCase() as 'EXPENSE' | 'INCOME',
+    color: '#6366f1',
+    icon: 'tag',
+    description: ''
+  })
   const [creatingCategory, setCreatingCategory] = useState(false)
 
   const dedupeCategories = (items: Category[]): Category[] => {
@@ -39,6 +46,11 @@ export default function AddTransactionPage() {
   }
 
   const dedupedCategories = useMemo(() => dedupeCategories(categories), [categories])
+
+  // Update newCategory type when transaction type changes
+  useEffect(() => {
+    setNewCategory(prev => ({ ...prev, type: transactionType.toUpperCase() as 'EXPENSE' | 'INCOME' }))
+  }, [transactionType])
 
   // Fetch categories when component mounts and when transaction type changes
   useEffect(() => {
@@ -152,15 +164,22 @@ export default function AddTransactionPage() {
     try {
       const response = await categoryService.createCategory({
         name: newCategory.name.trim(),
-        type: transactionType.toUpperCase(),
+        type: newCategory.type,
         color: newCategory.color,
-        description: ''
+        description: newCategory.description || '',
+        icon: newCategory.icon
       })
 
       if (response.success) {
         toast.success('Category created successfully!')
         setShowCreateCategory(false)
-        setNewCategory({ name: '', color: '#6366f1' })
+        setNewCategory({ 
+          name: '', 
+          type: transactionType.toUpperCase() as 'EXPENSE' | 'INCOME',
+          color: '#6366f1',
+          icon: 'tag',
+          description: ''
+        })
         // Refresh categories
         const categoriesResponse = await categoryService.fetchCategories(transactionType)
         if (categoriesResponse.success && categoriesResponse.data) {
@@ -336,6 +355,7 @@ export default function AddTransactionPage() {
               <div className="grid grid-cols-3 gap-3">
                 {dedupedCategories.map((category: Category, index: number) => {
                   const isSelected = formData.category === category.id
+                  const categoryIcon = getCategoryIcon(category)
                   
                   return (
                     <button
@@ -345,13 +365,13 @@ export default function AddTransactionPage() {
                       className="flex flex-col items-center justify-center gap-2 p-2 transition-all"
                     >
                       <div 
-                        className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl border-2 transition-all ${
+                        className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl border-2 transition-all backdrop-blur-md ${
                           isSelected 
                             ? 'bg-white/20 border-white/60 ring-4 ring-white/30 scale-110 shadow-lg' 
-                            : 'bg-transparent border-white/20 hover:border-white/40'
+                            : 'bg-white/10 border-white/20 hover:bg-white/15 hover:border-white/40'
                         }`}
                       >
-                        <FiTag />
+                        {categoryIcon}
                       </div>
                       <span className={`text-xs font-medium text-center leading-tight mt-1 ${
                         isSelected ? 'text-white font-semibold' : 'text-white/70'
@@ -423,7 +443,13 @@ export default function AddTransactionPage() {
                 <button
                   onClick={() => {
                     setShowCreateCategory(false)
-                    setNewCategory({ name: '', color: '#6366f1' })
+                    setNewCategory({ 
+                      name: '', 
+                      type: transactionType.toUpperCase() as 'EXPENSE' | 'INCOME',
+                      color: '#6366f1',
+                      icon: 'tag',
+                      description: ''
+                    })
                   }}
                   className="p-2 hover:bg-white/10 rounded-full transition-colors"
                 >
@@ -447,24 +473,71 @@ export default function AddTransactionPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-3">
-                    Color
+                  <label className="block text-sm font-medium text-white/70 mb-2">
+                    Type
                   </label>
-                  <div className="grid grid-cols-6 gap-3">
-                    {colorOptions.map((color) => (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewCategory({ ...newCategory, type: 'EXPENSE' })}
+                      className={`py-3 px-4 rounded-xl transition-all ${
+                        newCategory.type === 'EXPENSE'
+                          ? 'bg-red-500/20 text-red-300 border-2 border-red-500/40'
+                          : 'bg-white/5 text-white/60 border-2 border-transparent'
+                      }`}
+                    >
+                      Expense
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewCategory({ ...newCategory, type: 'INCOME' })}
+                      className={`py-3 px-4 rounded-xl transition-all ${
+                        newCategory.type === 'INCOME'
+                          ? 'bg-green-500/20 text-green-300 border-2 border-green-500/40'
+                          : 'bg-white/5 text-white/60 border-2 border-transparent'
+                      }`}
+                    >
+                      Income
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-3">
+                    Icon
+                  </label>
+                  <div className="grid grid-cols-6 gap-3 max-h-64 overflow-y-auto p-2 bg-white/5 rounded-xl border border-white/10">
+                    {availableIcons.map((icon) => (
                       <button
-                        key={color}
+                        key={icon.name}
                         type="button"
-                        onClick={() => setNewCategory({ ...newCategory, color })}
-                        className={`w-12 h-12 rounded-full transition-all ${
-                          newCategory.color === color
-                            ? 'ring-4 ring-white/50 scale-110'
-                            : 'hover:scale-105'
+                        onClick={() => setNewCategory({ ...newCategory, icon: icon.name })}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                          newCategory.icon === icon.name
+                            ? 'bg-white/20 border-2 border-white/50 scale-110'
+                            : 'bg-white/10 border-2 border-white/20 hover:bg-white/15 hover:border-white/40 hover:scale-105'
                         }`}
-                        style={{ backgroundColor: color }}
-                      />
+                        title={icon.label}
+                      >
+                        <span className="text-white text-lg">
+                          {getIconByName(icon.name)}
+                        </span>
+                      </button>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-2">
+                    Description (optional)
+                  </label>
+                  <textarea
+                    value={newCategory.description}
+                    onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                    placeholder="Enter description"
+                    rows={2}
+                    className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 resize-none"
+                  />
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -472,7 +545,13 @@ export default function AddTransactionPage() {
                     type="button"
                     onClick={() => {
                       setShowCreateCategory(false)
-                      setNewCategory({ name: '', color: '#6366f1' })
+                      setNewCategory({ 
+                        name: '', 
+                        type: transactionType.toUpperCase() as 'EXPENSE' | 'INCOME',
+                        color: '#6366f1',
+                        icon: 'tag',
+                        description: ''
+                      })
                     }}
                     className="flex-1 py-3 px-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
                   >

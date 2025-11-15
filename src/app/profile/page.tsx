@@ -8,11 +8,9 @@ import { auth, storage } from '@/lib/config/firebase'
 import { updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { toast } from '@/lib/utils/toast'
-<<<<<<< HEAD
 import { cacheService } from '@/lib/services/cacheService'
-=======
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
->>>>>>> 9b5a5b7870e9598a694d16543c7299370c6a8d32
+
 
 export default function ProfilePage() {
   const router = useRouter()
