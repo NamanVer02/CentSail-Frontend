@@ -6,6 +6,8 @@ import { FiArrowLeft, FiPlus, FiEdit2, FiTrash2, FiX, FiTag } from 'react-icons/
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { toast } from '@/lib/utils/toast'
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import { getCategoryIcon, getIconByName, availableIcons } from '@/lib/utils/categoryIcons'
+import ConfirmDialog from '@/app/components/ConfirmDialog'
 
 export default function CategoriesManagementPage() {
   const router = useRouter()
@@ -14,14 +16,10 @@ export default function CategoriesManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [formData, setFormData] = useState({ name: '', type: 'EXPENSE', color: '#6366f1', description: '' })
+  const [formData, setFormData] = useState({ name: '', type: 'EXPENSE', color: '#6366f1', description: '', icon: 'tag' }) // color kept for backend compatibility but not displayed
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; categoryId: string | null }>({ isOpen: false, categoryId: null })
   const scrollProgress = useScrollActivation(50)
-
-  const colorOptions = [
-    '#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7',
-    '#ec4899', '#6366f1', '#f97316', '#14b8a6'
-  ]
 
   useEffect(() => {
     fetchCategories()
@@ -74,13 +72,14 @@ export default function CategoriesManagementPage() {
         name: formData.name.trim(),
         type: formData.type,
         color: formData.color,
-        description: formData.description || ''
+        description: formData.description || '',
+        icon: formData.icon
       })
 
       if (response.success) {
         toast.success('Category created successfully!')
         setShowCreateModal(false)
-        setFormData({ name: '', type: 'EXPENSE', color: '#6366f1', description: '' })
+        setFormData({ name: '', type: 'EXPENSE', color: '#6366f1', description: '', icon: 'tag' }) // color kept for backend compatibility
         fetchCategories()
       } else {
         toast.error(response.message || 'Failed to create category')
@@ -106,14 +105,15 @@ export default function CategoriesManagementPage() {
         name: formData.name.trim(),
         type: formData.type,
         color: formData.color,
-        description: formData.description || ''
+        description: formData.description || '',
+        icon: formData.icon
       })
 
       if (response.success) {
         toast.success('Category updated successfully!')
         setShowEditModal(false)
         setEditingCategory(null)
-        setFormData({ name: '', type: 'EXPENSE', color: '#6366f1', description: '' })
+        setFormData({ name: '', type: 'EXPENSE', color: '#6366f1', description: '', icon: 'tag' }) // color kept for backend compatibility
         fetchCategories()
       } else {
         toast.error(response.message || 'Failed to update category')
@@ -126,13 +126,15 @@ export default function CategoriesManagementPage() {
     }
   }
 
-  const handleDelete = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) {
-      return
-    }
+  const handleDeleteClick = (categoryId: string) => {
+    setDeleteConfirm({ isOpen: true, categoryId })
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.categoryId) return
 
     try {
-      const response = await categoryService.deleteCategory(categoryId)
+      const response = await categoryService.deleteCategory(deleteConfirm.categoryId)
       if (response.success) {
         toast.success('Category deleted successfully!')
         fetchCategories()
@@ -142,7 +144,13 @@ export default function CategoriesManagementPage() {
     } catch (error) {
       console.error('Error deleting category:', error)
       toast.error('Failed to delete category')
+    } finally {
+      setDeleteConfirm({ isOpen: false, categoryId: null })
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, categoryId: null })
   }
 
   const openEditModal = (category: Category) => {
@@ -151,7 +159,8 @@ export default function CategoriesManagementPage() {
       name: category.name,
       type: category.type,
       color: category.color || '#6366f1',
-      description: category.description || ''
+      description: category.description || '',
+      icon: category.icon || 'tag'
     })
     setShowEditModal(true)
   }
@@ -160,7 +169,7 @@ export default function CategoriesManagementPage() {
     setShowCreateModal(false)
     setShowEditModal(false)
     setEditingCategory(null)
-    setFormData({ name: '', type: 'EXPENSE', color: '#6366f1', description: '' })
+    setFormData({ name: '', type: 'EXPENSE', color: '#6366f1', description: '', icon: 'tag' })
   }
 
   const expenseCategories = categories.filter(c => c.type === 'EXPENSE')
@@ -259,10 +268,9 @@ export default function CategoriesManagementPage() {
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 flex-shrink-0"
-                          style={{ backgroundColor: category.color || '#6366f1' }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 flex-shrink-0 bg-white/10 backdrop-blur-md"
                         >
-                          <FiTag className="text-white text-sm" />
+                          {getCategoryIcon(category)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-medium truncate">{category.name}</p>
@@ -279,7 +287,7 @@ export default function CategoriesManagementPage() {
                           <FiEdit2 className="text-lg" />
                         </button>
                         <button
-                          onClick={() => handleDelete(category.id)}
+                          onClick={() => handleDeleteClick(category.id)}
                           className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
                         >
                           <FiTrash2 className="text-lg" />
@@ -308,10 +316,9 @@ export default function CategoriesManagementPage() {
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 flex-shrink-0"
-                          style={{ backgroundColor: category.color || '#6366f1' }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 flex-shrink-0 bg-white/10 backdrop-blur-md"
                         >
-                          <FiTag className="text-white text-sm" />
+                          {getCategoryIcon(category)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-medium truncate">{category.name}</p>
@@ -328,7 +335,7 @@ export default function CategoriesManagementPage() {
                           <FiEdit2 className="text-lg" />
                         </button>
                         <button
-                          onClick={() => handleDelete(category.id)}
+                          onClick={() => handleDeleteClick(category.id)}
                           className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
                         >
                           <FiTrash2 className="text-lg" />
@@ -420,21 +427,25 @@ export default function CategoriesManagementPage() {
 
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-3">
-                  Color
+                  Icon
                 </label>
-                <div className="grid grid-cols-6 gap-3">
-                  {colorOptions.map((color) => (
+                <div className="grid grid-cols-6 gap-3 max-h-64 overflow-y-auto p-2 bg-white/5 rounded-xl border border-white/10">
+                  {availableIcons.map((icon) => (
                     <button
-                      key={color}
+                      key={icon.name}
                       type="button"
-                      onClick={() => setFormData({ ...formData, color })}
-                      className={`w-12 h-12 rounded-full transition-all ${
-                        formData.color === color
-                          ? 'ring-4 ring-white/50 scale-110'
-                          : 'hover:scale-105'
+                      onClick={() => setFormData({ ...formData, icon: icon.name })}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                        formData.icon === icon.name
+                          ? 'bg-white/20 border-2 border-white/50 scale-110'
+                          : 'bg-white/10 border-2 border-white/20 hover:bg-white/15 hover:border-white/40 hover:scale-105'
                       }`}
-                      style={{ backgroundColor: color }}
-                    />
+                      title={icon.label}
+                    >
+                      <span className="text-white text-lg">
+                        {getIconByName(icon.name)}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -473,6 +484,18 @@ export default function CategoriesManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Category"
+        message="Are you sure you want to delete this category? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        variant="danger"
+      />
     </div>
   )
 }

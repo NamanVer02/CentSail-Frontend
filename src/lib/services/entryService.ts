@@ -1,4 +1,5 @@
 import { auth } from '@/lib/config/firebase'
+import { cacheService } from './cacheService'
 
 // Route through Next.js rewrite proxy to avoid CORS/proxy issues
 const API_BASE_URL = '/api'
@@ -97,6 +98,15 @@ class EntryService {
       }
 
       const data = await response.json()
+      
+      // Invalidate entries and analytics cache on create
+      if (data.success) {
+        const userId = auth.currentUser?.uid
+        cacheService.invalidateEntries(userId)
+        cacheService.invalidateAnalytics(userId)
+        cacheService.invalidateDashboard(userId)
+      }
+      
       return data
     } catch (error) {
       console.error('Error creating entry:', error)
@@ -115,6 +125,40 @@ class EntryService {
 
   async getEntries(listRequest: ListRequest): Promise<ApiResponse<Entry[]>> {
     try {
+      // Wait for auth if needed
+      if (!auth.currentUser) {
+        // Wait a bit for auth to initialize
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      
+      const userId = auth.currentUser?.uid
+      
+      if (!userId) {
+        // If still no userId, proceed without cache
+      } else {
+        // Normalize listRequest for consistent cache keys
+        const cacheParams = {
+          userId,
+          page: listRequest.page || 1,
+          pageSize: listRequest.pageSize || 10,
+          sortBy: listRequest.sortBy || 'date',
+          sortOrder: listRequest.sortOrder || 'desc',
+          type: listRequest.type,
+          categoryId: listRequest.categoryId,
+          startDate: listRequest.startDate,
+          endDate: listRequest.endDate,
+          minAmount: listRequest.minAmount,
+          maxAmount: listRequest.maxAmount,
+          searchTerm: listRequest.searchTerm
+        }
+        
+        // Check cache first
+        const cached = cacheService.getEntries(cacheParams)
+        if (cached) {
+          return cached as ApiResponse<Entry[]>
+        }
+      }
+      
       const headers = await this.getAuthHeaders()
       
       const response = await fetch(`${API_BASE_URL}/entry/list`, {
@@ -133,6 +177,26 @@ class EntryService {
       }
 
       const data = await response.json()
+      
+      // Cache the result (only if we have userId and success)
+      if (data.success && userId) {
+        const cacheParams = {
+          userId,
+          page: listRequest.page || 1,
+          pageSize: listRequest.pageSize || 10,
+          sortBy: listRequest.sortBy || 'date',
+          sortOrder: listRequest.sortOrder || 'desc',
+          type: listRequest.type,
+          categoryId: listRequest.categoryId,
+          startDate: listRequest.startDate,
+          endDate: listRequest.endDate,
+          minAmount: listRequest.minAmount,
+          maxAmount: listRequest.maxAmount,
+          searchTerm: listRequest.searchTerm
+        }
+        cacheService.setEntries(data, cacheParams)
+      }
+      
       return data
     } catch (error) {
       console.error('Error fetching entries:', error)
@@ -205,6 +269,15 @@ class EntryService {
       }
 
       const data = await response.json()
+      
+      // Invalidate entries and analytics cache on update
+      if (data.success) {
+        const userId = auth.currentUser?.uid
+        cacheService.invalidateEntries(userId)
+        cacheService.invalidateAnalytics(userId)
+        cacheService.invalidateDashboard(userId)
+      }
+      
       return data
     } catch (error) {
       console.error('Error updating entry:', error)
@@ -240,6 +313,15 @@ class EntryService {
       }
 
       const data = await response.json()
+      
+      // Invalidate entries and analytics cache on delete
+      if (data.success) {
+        const userId = auth.currentUser?.uid
+        cacheService.invalidateEntries(userId)
+        cacheService.invalidateAnalytics(userId)
+        cacheService.invalidateDashboard(userId)
+      }
+      
       return data
     } catch (error) {
       console.error('Error deleting entry:', error)

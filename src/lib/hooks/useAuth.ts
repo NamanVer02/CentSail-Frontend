@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { firebaseAuthService } from '@/lib/services/firebaseAuthService';
 import { SignupRequest, LoginRequest, FirebaseUser, AuthError } from '@/lib/types/auth';
 import { authService } from '@/lib/services/authService';
+import { cacheService } from '@/lib/services/cacheService';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -105,6 +106,9 @@ export function useAuth(): AuthState & AuthActions {
     
     try {
       await firebaseAuthService.signOut();
+      
+      // Clear all cache on logout to prevent data leakage
+      cacheService.clear();
       
       setState(prev => ({
         ...prev,

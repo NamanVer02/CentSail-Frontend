@@ -2,12 +2,13 @@
 
 import { use, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiEdit, FiX, FiTag, FiCalendar, FiDollarSign } from 'react-icons/fi'
+import { FiArrowLeft, FiEdit, FiX, FiCalendar, FiDollarSign } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import { getCategoryIconById } from '@/lib/utils/categoryIcons'
 
 export default function TransactionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -54,6 +55,13 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
       setCategories(arr)
     })()
   }, [])
+
+  // Map category ID to category object
+  const categoryMap = useMemo(() => {
+    const m = new Map<string, Category>()
+    categories.forEach(c => m.set(c.id, c))
+    return m
+  }, [categories])
 
   // Fetch categories when editing and type changes
   useEffect(() => {
@@ -412,7 +420,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
                             }`}
                             style={{ backgroundColor: isSelected ? category.color + '40' : 'transparent' }}
                           >
-                            <FiTag />
+                            {getCategoryIconById(category.id, categoryMap)}
                           </div>
                           <span className={`text-xs font-medium text-center leading-tight ${
                             isSelected ? 'text-white font-semibold' : 'text-white/70'

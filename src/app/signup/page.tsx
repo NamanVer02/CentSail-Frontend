@@ -59,18 +59,27 @@ export default function SignupPage() {
     setError("")
 
     try {
-      const user = await firebaseAuthService.signInWithGoogle()
+      const result = await firebaseAuthService.signInWithGoogle()
+      const { user, isNewUser } = result
 
+      // Always call backend signup for new users (creates default categories)
+      // For existing users signing up again, this will be idempotent on backend
       if (user.email) {
         try {
-          await authService.signup({
+          const signupResponse = await authService.signup({
             username: user.displayName || user.email.split("@")[0],
             email: user.email,
             password: "",
             uid: user.uid,
           })
+
+          if (!signupResponse.success) {
+            console.error("Backend signup failed:", signupResponse.message)
+            // Continue anyway - user is authenticated in Firebase
+          }
         } catch (backendErr) {
-          console.log("Backend signup:", backendErr)
+          console.error("Backend signup error:", backendErr)
+          // Continue anyway - user is authenticated in Firebase
         }
       }
 
