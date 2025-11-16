@@ -54,7 +54,7 @@ export default function CountryCodeSelect({
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-48 bg-[#0c504a] border border-white/20 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1 w-48 bg-black/30 backdrop-blur-md border border-white/20 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
           {options.map((option) => (
             <button
               key={option.code}

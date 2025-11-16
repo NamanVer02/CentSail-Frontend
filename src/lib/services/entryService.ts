@@ -29,12 +29,17 @@ export interface EntryRequest {
 
 export interface ListRequest {
   userId: string
+  page?: number
+  pageSize?: number
+  sortBy?: string
+  sortOrder?: string
   startDate?: string
   endDate?: string
   type?: string
   categoryId?: string
-  limit?: number
-  offset?: number
+  minAmount?: number
+  maxAmount?: number
+  searchTerm?: string
 }
 
 export interface UpdateRequest {

@@ -15,7 +15,8 @@ export default function BottomNav() {
     pathname === '/profile' ||
     pathname === '/account' ||
     pathname?.startsWith('/transactions/') ||
-    pathname === '/settings/categories'
+    pathname === '/settings/categories' ||
+    pathname === '/settings/appearance'
   ) {
     return null
   }
@@ -29,7 +30,7 @@ export default function BottomNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#0c504a]/95 backdrop-blur-xl border-t border-white/10 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-black/20 backdrop-blur-xl border-t border-white/10 z-50">
       <div className="max-w-6xl mx-auto px-6 py-3">
         <div className="flex justify-around items-center relative">
           {navItems.map((item) => {

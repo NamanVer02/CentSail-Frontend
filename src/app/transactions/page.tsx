@@ -9,6 +9,8 @@ import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import Silk from '@/components/Silk'
+import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 
 type EntryItem = {
   id: string
@@ -20,6 +22,7 @@ type EntryItem = {
 }
 
 export default function TransactionsPage() {
+  const silkSettings = useSilkSettings()
   const router = useRouter()
   const scrollProgress = useScrollActivation(50)
   const [entries, setEntries] = useState<EntryItem[]>([])
@@ -223,14 +226,24 @@ export default function TransactionsPage() {
   }, [hasNext, isLoading, page])
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
-      <div className="max-w-6xl mx-auto px-6 py-6 pb-24">
+    <div className="min-h-screen w-full text-white relative">
+      {/* Silk Background */}
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none">
+        <Silk
+          speed={silkSettings.speed}
+          scale={silkSettings.scale}
+          color={silkSettings.color}
+          noiseIntensity={silkSettings.noiseIntensity}
+          rotation={silkSettings.rotation}
+        />
+      </div>
+      <div className="max-w-6xl mx-auto px-6 py-6 pb-24 relative z-10">
         {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
         <div
           className="pointer-events-auto w-full max-w-6xl mx-4 mt-3 px-6 py-4 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
           style={{
-            backgroundColor: `rgba(12, 80, 74, ${0.35 + scrollProgress * 0.45})`,
+            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
             boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
             borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
           }}

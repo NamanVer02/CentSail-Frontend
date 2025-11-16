@@ -7,8 +7,11 @@ import { authService } from "@/lib/services/authService"
 import { toast } from "@/lib/utils/toast"
 import Input from "@/app/components/ui/Input"
 import Button from "@/app/components/ui/Button"
+import Silk from '@/components/Silk'
+import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 
 export default function SignupPage() {
+  const silkSettings = useSilkSettings()
   const router = useRouter()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -92,9 +95,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] flex items-center justify-center p-6 md:p-8 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-0 left-0 w-full h-48 bg-[radial-gradient(circle,_rgba(255,255,255,0.3)_1px,_transparent_1px)] bg-[size:20px_20px]"></div>
+    <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-8 relative overflow-hidden">
+      {/* Silk Background */}
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none">
+        <Silk
+          speed={silkSettings.speed}
+          scale={silkSettings.scale}
+          color={silkSettings.color}
+          noiseIntensity={silkSettings.noiseIntensity}
+          rotation={silkSettings.rotation}
+        />
       </div>
 
       <div className="w-full max-w-md space-y-6 relative z-10 px-4">

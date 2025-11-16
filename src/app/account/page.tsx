@@ -10,8 +10,11 @@ import { updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCreden
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { toast } from '@/lib/utils/toast'
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import Silk from '@/components/Silk'
+import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 
 export default function AccountPage() {
+  const silkSettings = useSilkSettings()
   const router = useRouter()
   const scrollProgress = useScrollActivation(50)
   const [displayName, setDisplayName] = useState<string>('')
@@ -168,13 +171,23 @@ export default function AccountPage() {
   // OTP/Recaptcha removed for now; phone is a simple editable field
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white">
+    <div className="min-h-screen w-full text-white relative">
+      {/* Silk Background */}
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none">
+        <Silk
+          speed={silkSettings.speed}
+          scale={silkSettings.scale}
+          color={silkSettings.color}
+          noiseIntensity={silkSettings.noiseIntensity}
+          rotation={silkSettings.rotation}
+        />
+      </div>
        {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
         <div
           className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center justify-between rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
           style={{
-            backgroundColor: `rgba(12, 80, 74, ${0.4 + scrollProgress * 0.4})`,
+            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
             boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
             borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
           }}
@@ -189,7 +202,7 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-28 pb-24">
+      <div className="max-w-md mx-auto px-4 pt-28 pb-24 relative z-10">
         <div className="flex flex-col items-center mb-8">
           {/* View-only header; editing moved to modal */}
           {photoURL ? (
@@ -250,7 +263,7 @@ export default function AccountPage() {
       {/* Edit Modal */}
       {isEditing && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center md:p-4">
-          <div className="w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white rounded-t-2xl md:rounded-2xl md:max-w-md border-t border-x md:border border-white/10 shadow-2xl p-6">
+          <div className="w-full bg-black/30 backdrop-blur-md text-white rounded-t-2xl md:rounded-2xl md:max-w-md border-t border-x md:border border-white/10 shadow-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Edit Profile</h2>
               <button
@@ -354,7 +367,7 @@ export default function AccountPage() {
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center md:p-4">
-          <div className="w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white rounded-t-2xl md:rounded-2xl md:max-w-md border-t border-x md:border border-white/10 shadow-2xl p-6">
+          <div className="w-full bg-black/30 backdrop-blur-md text-white rounded-t-2xl md:rounded-2xl md:max-w-md border-t border-x md:border border-white/10 shadow-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-red-400">Delete Account</h2>
               <button

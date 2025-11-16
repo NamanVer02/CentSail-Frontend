@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { chatService } from '@/lib/services/chatService'
 import { auth } from '@/lib/config/firebase'
 import ReactMarkdown from 'react-markdown'
+import Silk from '@/components/Silk'
+import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 
 type ChatMessage = {
   id: number
@@ -19,6 +21,7 @@ const MAX_STORAGE_BYTES = 100 * 1024 // ~100KB
 const MAX_HISTORY_TURNS = 20
 
 const ChatPage = () => {
+    const silkSettings = useSilkSettings()
     const router = useRouter();
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -139,10 +142,20 @@ const ChatPage = () => {
 
 
     return (
-        <div className="h-screen w-full bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] text-white flex flex-col">
+        <div className="h-screen w-full text-white flex flex-col relative">
+            {/* Silk Background */}
+            <div className="fixed inset-0 z-0 w-full h-full pointer-events-none">
+                <Silk
+                    speed={silkSettings.speed}
+                    scale={silkSettings.scale}
+                    color={silkSettings.color}
+                    noiseIntensity={silkSettings.noiseIntensity}
+                    rotation={silkSettings.rotation}
+                />
+            </div>
 
             {/* Header */}
-            <div className="bg-[#0c504a]/80 backdrop-blur-md z-10">
+            <div className="bg-black/20 backdrop-blur-md z-10 relative">
                 <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
                     <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiArrowLeft /></button>
                     <div className="text-center">
@@ -164,7 +177,7 @@ const ChatPage = () => {
             </div>
 
             {/* Chat messages */}
-            <div className="flex-1 max-w-md mx-auto w-full px-4 overflow-y-auto">
+            <div className="flex-1 max-w-md mx-auto w-full px-4 overflow-y-auto relative z-10">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center px-4">
@@ -217,7 +230,7 @@ const ChatPage = () => {
 
 
             {/* Message Input */}
-            <div className="bg-[#0c504a]/80 backdrop-blur-md pb-24">
+            <div className="bg-black/20 backdrop-blur-md pb-24 relative z-10">
               <div className="max-w-md mx-auto p-4">
                 {/* Suggestion Chips */}
                 <div className="flex gap-2 mb-3 justify-start overflow-x-auto pb-2 no-scrollbar">

@@ -12,8 +12,10 @@ import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
 import { getCategoryIcon, getCategoryIconById } from '@/lib/utils/categoryIcons'
 import Silk from '@/components/Silk'
+import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 
 export default function DashboardPage() {
+  const silkSettings = useSilkSettings()
   const [greeting] = useState(() => {
     const hour = new Date().getHours()
     if (hour < 12) return 'Good Morning'
@@ -117,7 +119,7 @@ export default function DashboardPage() {
           pageSize: 10,
           sortBy: 'date',
           sortOrder: 'desc'
-        } as any)
+        })
         const payload: any = res.data || {}
         const items: RecentEntry[] = Array.isArray(payload.entries) ? payload.entries : []
         if (mounted) setRecentTransactions(items)
@@ -190,13 +192,13 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
       {/* Silk Background */}
-      <div className="fixed inset-0 z-0 w-full h-full">
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none">
         <Silk
-          speed={5}
-          scale={0.9}
-          color="#575459"
-          noiseIntensity={1.3}
-          rotation={0}
+          speed={silkSettings.speed}
+          scale={silkSettings.scale}
+          color={silkSettings.color}
+          noiseIntensity={silkSettings.noiseIntensity}
+          rotation={silkSettings.rotation}
         />
       </div>
 

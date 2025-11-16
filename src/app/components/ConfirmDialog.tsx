@@ -44,7 +44,7 @@ export default function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-      <div className="bg-[radial-gradient(ellipse_at_center,_#1a7370_0%,_#0c504a_100%)] rounded-2xl p-6 w-full max-w-md border border-white/20 shadow-2xl">
+      <div className="bg-black/30 backdrop-blur-md rounded-2xl p-6 w-full max-w-md border border-white/20 shadow-2xl">
         <div className="flex items-start gap-4 mb-6">
           <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-white/10 border-2 border-white/20 ${styles.icon}`}>
             <FiAlertTriangle className="text-2xl" />
