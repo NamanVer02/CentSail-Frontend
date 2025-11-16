@@ -3,11 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
-<<<<<<< HEAD
 import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiArrowUp, FiArrowDown } from 'react-icons/fi'
-=======
-import { FiPlus, FiRepeat, FiUser, FiBell, FiArrowUp, FiArrowDown, FiBarChart2, FiTarget } from 'react-icons/fi'
->>>>>>> b1d75b39260a28abc83eec5098066511d4bdbb56
+
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { analyticsService, CategoryExpenseData } from '@/lib/services/analyticsService'
