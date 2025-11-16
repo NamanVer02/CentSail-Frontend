@@ -7,12 +7,13 @@ import { FiHome, FiBarChart2, FiPlus, FiMessageSquare, FiSettings } from 'react-
 export default function BottomNav() {
   const pathname = usePathname()
   
-  // Hide bottom nav on login, signup, add, profile, transaction details, and category management pages
+  // Hide bottom nav on login, signup, add, profile, account, transaction details, and category management pages
   if (
     pathname === '/login' ||
     pathname === '/signup' ||
     pathname === '/add' ||
     pathname === '/profile' ||
+    pathname === '/account' ||
     pathname?.startsWith('/transactions/') ||
     pathname === '/settings/categories'
   ) {

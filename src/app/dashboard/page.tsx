@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
-import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiUser, FiBell, FiArrowUp, FiArrowDown } from 'react-icons/fi'
+import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiArrowUp, FiArrowDown } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { analyticsService, CategoryExpenseData } from '@/lib/services/analyticsService'
@@ -246,24 +246,11 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="relative z-10 px-6 py-6 pb-24 max-w-6xl mx-auto">
-        {/* Top Section - Header (Settings button removed) */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center overflow-hidden">
-              <Link href="/profile" className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/20 transition-all">
-                <span className="text-2xl text-white"><FiUser /></span>
-              </Link>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">{greeting}</h1>
-              <p className="text-white/70 text-sm">Welcome back!</p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/20 transition-all">
-              <span className="text-white text-xl"><FiBell /></span>
-            </button>
+        {/* Top Section - Header */}
+        <div className="mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white">{greeting}</h1>
+            <p className="text-white/70 text-sm">Welcome back!</p>
           </div>
         </div>
 

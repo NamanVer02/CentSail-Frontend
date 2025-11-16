@@ -45,6 +45,36 @@ class AuthService {
       return { success: false, message: 'Failed to sign up. Please try again.' }
     }
   }
+
+  async deleteAccount(idToken: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/delete-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+      })
+
+      const text = await response.text()
+      const json = text ? JSON.parse(text) : {}
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: json.message || `HTTP ${response.status}: ${response.statusText}`,
+        }
+      }
+
+      return {
+        success: true,
+        message: json.message || 'Account deletion initiated successfully',
+      }
+    } catch (error) {
+      console.error('Delete account API error:', error)
+      return { success: false, message: 'Failed to delete account. Please try again.' }
+    }
+  }
 }
 
 export const authService = new AuthService()

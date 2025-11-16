@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiUser, FiBell, FiEye, FiShield, FiHelpCircle, FiChevronRight, FiTag } from 'react-icons/fi'
+import { FiArrowLeft, FiUser, FiEye, FiShield, FiHelpCircle, FiChevronRight, FiTag } from 'react-icons/fi'
 import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 
 export default function SettingsPage() {
@@ -13,19 +13,13 @@ export default function SettingsPage() {
       title: 'Account',
       icon: <FiUser className="text-xl text-white/60" />,
       description: 'Manage your account details',
-      href: '#'
+      href: '/account'
     },
     {
       title: 'Category Management',
       icon: <FiTag className="text-xl text-white/60" />,
       description: 'Add, edit, and delete categories',
       href: '/settings/categories'
-    },
-    {
-      title: 'Notifications',
-      icon: <FiBell className="text-xl text-white/60" />,
-      description: 'Customize your notification preferences',
-      href: '#'
     },
     {
       title: 'Appearance',
