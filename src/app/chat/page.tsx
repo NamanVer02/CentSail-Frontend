@@ -5,6 +5,7 @@ import { FiArrowLeft, FiSend, FiBarChart2, FiRefreshCw } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { chatService } from '@/lib/services/chatService'
 import { auth } from '@/lib/config/firebase'
+import { toast } from '@/lib/utils/toast'
 import ReactMarkdown from 'react-markdown'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
@@ -119,7 +120,19 @@ const ChatPage = () => {
           throw new Error('not authenticated')
         }
         const res = await chatService.query({ question: newMessage.text, history: historyForRequest })
-        const answer = res.success && res.answer ? res.answer : 'Sorry, I could not process that.'
+        if (!res.success) {
+          const errorText = res.message || 'Sorry, I could not process that.'
+          toast.error(errorText)
+          const botResponse: ChatMessage = {
+            id: Date.now() + 1,
+            text: errorText,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            sender: 'bot'
+          }
+          setMessages(prev => trimMessages([...prev, botResponse]))
+          return
+        }
+        const answer = res.answer ? res.answer : 'Sorry, I could not process that.'
         const botResponse: ChatMessage = {
           id: Date.now() + 1,
           text: answer,
@@ -128,9 +141,11 @@ const ChatPage = () => {
         }
         setMessages(prev => trimMessages([...prev, botResponse]))
       } catch (err) {
+        const fallback = err instanceof Error ? err.message : 'Authentication required. Please log in again.'
+        toast.error(fallback)
         const errorMsg: ChatMessage = {
           id: Date.now() + 1,
-          text: 'Authentication required. Please log in again.',
+          text: fallback,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           sender: 'bot'
         }

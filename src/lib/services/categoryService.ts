@@ -1,5 +1,7 @@
 import { auth } from '@/lib/config/firebase'
 import { cacheService } from './cacheService'
+import { sessionService } from './sessionService'
+import { handleUnauthorizedSession } from '@/lib/utils/sessionGuard'
 
 // Route through Next.js rewrite proxy to avoid CORS/proxy issues
 const API_BASE_URL = '/api'
@@ -22,11 +24,24 @@ export interface ApiResponse<T> {
 class CategoryService {
   private async getAuthHeaders(): Promise<HeadersInit> {
     const token = await this.getFirebaseIdToken()
+    const sessionToken = sessionService.getSessionToken()
+    if (!sessionToken) {
+      throw new Error('Session expired. Please log in again.')
+    }
     
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'X-Session-Token': sessionToken
     }
+  }
+
+  private async handleUnauthorized(response: Response): Promise<boolean> {
+    if (response.status === 401) {
+      await handleUnauthorizedSession()
+      return true
+    }
+    return false
   }
 
   private async getFirebaseIdToken(): Promise<string> {
@@ -89,9 +104,15 @@ class CategoryService {
       // Convert type to uppercase (EXPENSE/INCOME) as backend expects
       const requestBody = normalizedType ? { type: normalizedType } : {}
       
+      const sessionToken = sessionService.getSessionToken()
+      if (!sessionToken) {
+        throw new Error('Session expired. Please log in again.')
+      }
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'X-Session-Token': sessionToken
       }
       
       const response = await fetch(`${API_BASE_URL}/category/list`, {
@@ -99,6 +120,14 @@ class CategoryService {
         headers,
         body: JSON.stringify(requestBody)
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+          data: []
+        }
+      }
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -170,6 +199,13 @@ class CategoryService {
         body: JSON.stringify(categoryData)
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.'
+        }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -223,6 +259,13 @@ class CategoryService {
         body: JSON.stringify(categoryData)
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.'
+        }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -268,6 +311,13 @@ class CategoryService {
         headers,
         body: JSON.stringify({ id: categoryId })
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.'
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))

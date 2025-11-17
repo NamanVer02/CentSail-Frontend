@@ -20,6 +20,7 @@ import {
   signInWithEmailLink
 } from 'firebase/auth';
 import { auth } from '@/lib/config/firebase';
+import { sessionService } from './sessionService';
 
 export interface FirebaseUser {
   uid: string;
@@ -55,6 +56,7 @@ export class FirebaseAuthService {
 
   async signOut(): Promise<void> {
     try {
+      await sessionService.clearSessionOnServer();
       await signOut(auth);
     } catch (error) {
       throw this.handleAuthError(error as AuthError);

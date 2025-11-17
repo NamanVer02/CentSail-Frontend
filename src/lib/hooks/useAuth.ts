@@ -5,6 +5,7 @@ import { firebaseAuthService } from '@/lib/services/firebaseAuthService';
 import { SignupRequest, LoginRequest, FirebaseUser, AuthError } from '@/lib/types/auth';
 import { authService } from '@/lib/services/authService';
 import { cacheService } from '@/lib/services/cacheService';
+import { sessionService } from '@/lib/services/sessionService';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -33,6 +34,12 @@ export function useAuth(): AuthState & AuthActions {
     
     try {
       const user = await firebaseAuthService.signIn(data.email, data.password);
+      try {
+        await sessionService.registerSession()
+      } catch (sessionError) {
+        await firebaseAuthService.signOut()
+        throw sessionError instanceof Error ? sessionError : new Error('Failed to start session. Please try again.')
+      }
       
       setState(prev => ({
         ...prev,
@@ -76,6 +83,12 @@ export function useAuth(): AuthState & AuthActions {
 
       // Sign in the new user with Firebase to establish client session
       const user = await firebaseAuthService.signIn(data.email, data.password);
+      try {
+        await sessionService.registerSession()
+      } catch (sessionError) {
+        await firebaseAuthService.signOut()
+        throw sessionError instanceof Error ? sessionError : new Error('Failed to start session. Please try again.')
+      }
 
       setState(prev => ({
         ...prev,
@@ -105,6 +118,7 @@ export function useAuth(): AuthState & AuthActions {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      await sessionService.clearSessionOnServer();
       await firebaseAuthService.signOut();
       
       // Clear all cache on logout to prevent data leakage

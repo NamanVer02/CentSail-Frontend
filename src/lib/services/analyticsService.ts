@@ -1,5 +1,7 @@
 import { auth } from '@/lib/config/firebase'
 import { cacheService } from './cacheService'
+import { handleUnauthorizedSession } from '@/lib/utils/sessionGuard'
+import { sessionService } from './sessionService'
 
 const API_BASE_URL = '/api'
 
@@ -67,11 +69,24 @@ export interface AnalyticsRequestDTO {
 class AnalyticsService {
   private async getAuthHeaders(): Promise<HeadersInit> {
     const token = await this.getFirebaseIdToken()
+    const sessionToken = sessionService.getSessionToken()
+    if (!sessionToken) {
+      throw new Error('Session expired. Please log in again.')
+    }
     
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'X-Session-Token': sessionToken
     }
+  }
+
+  private async handleUnauthorized(response: Response): Promise<boolean> {
+    if (response.status === 401) {
+      await handleUnauthorizedSession()
+      return true
+    }
+    return false
   }
 
   private async waitForAuth(): Promise<void> {
@@ -134,6 +149,13 @@ class AnalyticsService {
         headers,
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+        }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -188,6 +210,13 @@ class AnalyticsService {
         headers,
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+        }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -240,6 +269,13 @@ class AnalyticsService {
         method: 'POST',
         headers,
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -295,6 +331,13 @@ class AnalyticsService {
         body: JSON.stringify({ months }),
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+        }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -347,6 +390,13 @@ class AnalyticsService {
         method: 'POST',
         headers,
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))

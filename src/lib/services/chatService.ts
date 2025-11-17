@@ -1,4 +1,6 @@
 import { auth } from '@/lib/config/firebase'
+import { sessionService } from './sessionService'
+import { handleUnauthorizedSession } from '@/lib/utils/sessionGuard'
 
 const API_BASE_URL = '/api'
 
@@ -19,14 +21,20 @@ export interface ChatRequest {
 export interface ChatResponse {
   success: boolean
   answer?: string
+  message?: string
 }
 
 class ChatService {
   private async getAuthHeaders(): Promise<HeadersInit> {
     const token = await this.getFirebaseIdToken()
+    const sessionToken = sessionService.getSessionToken()
+    if (!sessionToken) {
+      throw new Error('Session expired. Please log in again.')
+    }
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'X-Session-Token': sessionToken
     }
   }
 
@@ -52,15 +60,24 @@ class ChatService {
         headers,
         body: JSON.stringify(req)
       })
+      if (response.status === 401) {
+        await handleUnauthorizedSession()
+        return { success: false, message: 'Session expired. Please log in again.' }
+      }
       if (!response.ok) {
-        await response.text().catch(() => '')
-        return { success: false }
+        const text = await response.text().catch(() => '')
+        try {
+          const data = JSON.parse(text) as ChatResponse
+          return { success: false, message: data.message || 'Unable to process request.' }
+        } catch {
+          return { success: false, message: 'Unable to process request.' }
+        }
       }
       const data = await response.json()
       return data as ChatResponse
     } catch (error) {
       console.error('Error querying chat:', error)
-      return { success: false }
+      return { success: false, message: error instanceof Error ? error.message : 'Unable to process request.' }
     }
   }
 }

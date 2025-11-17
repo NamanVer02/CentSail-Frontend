@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { firebaseAuthService } from "@/lib/services/firebaseAuthService"
 import { authService } from "@/lib/services/authService"
+import { sessionService } from "@/lib/services/sessionService"
 import { toast } from "@/lib/utils/toast"
 import Input from "@/app/components/ui/Input"
 import Button from "@/app/components/ui/Button"
@@ -31,6 +32,12 @@ export default function LoginPage() {
 
     try {
       await firebaseAuthService.signIn(email.trim(), password)
+      try {
+        await sessionService.registerSession()
+      } catch (sessionError: any) {
+        await firebaseAuthService.signOut()
+        throw new Error(sessionError?.message || 'Failed to start session. Please try again.')
+      }
       toast.success("Login successful!")
       router.push("/dashboard")
     } catch (err: any) {
@@ -66,6 +73,13 @@ export default function LoginPage() {
           console.error("Backend signup error:", backendErr)
           // Continue anyway - user is authenticated in Firebase
         }
+      }
+
+      try {
+        await sessionService.registerSession()
+      } catch (sessionError: any) {
+        await firebaseAuthService.signOut()
+        throw new Error(sessionError?.message || 'Failed to start session. Please try again.')
       }
 
       toast.success(isNewUser ? "Account created successfully!" : "Login successful!")

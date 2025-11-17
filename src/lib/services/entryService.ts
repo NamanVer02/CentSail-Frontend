@@ -1,5 +1,7 @@
 import { auth } from '@/lib/config/firebase'
 import { cacheService } from './cacheService'
+import { sessionService } from './sessionService'
+import { handleUnauthorizedSession } from '@/lib/utils/sessionGuard'
 
 // Route through Next.js rewrite proxy to avoid CORS/proxy issues
 const API_BASE_URL = '/api'
@@ -62,11 +64,24 @@ export interface ApiResponse<T> {
 class EntryService {
   private async getAuthHeaders(): Promise<HeadersInit> {
     const token = await this.getFirebaseIdToken()
+    const sessionToken = sessionService.getSessionToken()
+    if (!sessionToken) {
+      throw new Error('Session expired. Please log in again.')
+    }
     
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'X-Session-Token': sessionToken
     }
+  }
+
+  private async handleUnauthorized(response: Response): Promise<boolean> {
+    if (response.status === 401) {
+      await handleUnauthorizedSession()
+      return true
+    }
+    return false
   }
 
   private async getFirebaseIdToken(): Promise<string> {
@@ -93,6 +108,10 @@ class EntryService {
         headers,
         body: JSON.stringify(entryData)
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return { success: false, message: 'Session expired. Please log in again.' }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -172,6 +191,10 @@ class EntryService {
         body: JSON.stringify(listRequest)
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return { success: false, message: 'Session expired. Please log in again.', data: [] }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -230,6 +253,14 @@ class EntryService {
         body: JSON.stringify({ id: entryId })
       })
 
+      if (await this.handleUnauthorized(response)) {
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+          data: undefined
+        }
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -264,6 +295,10 @@ class EntryService {
         headers,
         body: JSON.stringify(updateData)
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return { success: false, message: 'Session expired. Please log in again.' }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -308,6 +343,10 @@ class EntryService {
         headers,
         body: JSON.stringify({ id: entryId })
       })
+
+      if (await this.handleUnauthorized(response)) {
+        return { success: false, message: 'Session expired. Please log in again.' }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
