@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { FiArrowLeft, FiSend, FiBarChart2, FiRefreshCw } from "react-icons/fi";
+import { FiSend, FiBarChart2, FiRefreshCw } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { chatService } from '@/lib/services/chatService'
 import { auth } from '@/lib/config/firebase'
@@ -9,6 +9,7 @@ import { toast } from '@/lib/utils/toast'
 import ReactMarkdown from 'react-markdown'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import Header from '@/app/components/Header'
 
 type ChatMessage = {
   id: number
@@ -169,27 +170,22 @@ const ChatPage = () => {
                 />
             </div>
 
-            {/* Header */}
-            <div className="bg-black/20 backdrop-blur-md z-10 relative">
-                <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-                    <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiArrowLeft /></button>
-                    <div className="text-center">
-                        <h1 className="text-lg font-semibold">Centi</h1>
-                        <p className="text-xs text-white/60">Your Financial Assistant</p>
-                    </div>
-                    {messages.length > 0 ? (
-                      <button 
-                        onClick={handleResetChat} 
-                        className="text-xl p-2 rounded-full hover:bg-white/10 transition-colors"
-                        title="New chat"
-                      >
-                        <FiRefreshCw />
-                      </button>
-                    ) : (
-                      <div className="w-10 h-10"></div>
-                    )}
-                </div>
-            </div>
+            <Header
+              title="Centi"
+              rightAction={
+                messages.length > 0 ? (
+                  <button 
+                    onClick={handleResetChat} 
+                    className="text-xl p-2 rounded-full hover:bg-white/10 transition-colors"
+                    title="New chat"
+                  >
+                    <FiRefreshCw />
+                  </button>
+                ) : (
+                  <div className="w-10 h-10"></div>
+                )
+              }
+            />
 
             {/* Chat messages */}
             <div className="flex-1 max-w-md mx-auto w-full px-4 overflow-y-auto relative z-10">

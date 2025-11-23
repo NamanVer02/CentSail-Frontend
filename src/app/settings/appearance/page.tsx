@@ -2,17 +2,16 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiRotateCw } from 'react-icons/fi'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import { FiRotateCw } from 'react-icons/fi'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { appearanceService, SilkSettings } from '@/lib/services/appearanceService'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 import Silk from '@/components/Silk'
 import ColorPicker from '@/app/components/ui/ColorPicker'
+import Header from '@/app/components/Header'
 
 export default function AppearancePage() {
   const router = useRouter()
-  const scrollProgress = useScrollActivation(50)
   // Use saved settings for the actual background (from localStorage)
   const savedSettings = useSilkSettings()
   // Use local state for preview only
@@ -92,22 +91,7 @@ export default function AppearancePage() {
         />
       </div>
       
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2">
-            <FiArrowLeft />
-          </button>
-          <h1 className="text-lg font-semibold">Appearance</h1>
-        </div>
-      </div>
+      <Header title="Appearance" />
 
       <div className="max-w-md mx-auto px-4 pt-28 pb-10 relative z-10">
         <div className="space-y-6">

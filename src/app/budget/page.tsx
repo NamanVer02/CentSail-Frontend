@@ -1,16 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiTarget, FiDollarSign } from 'react-icons/fi'
+import { FiTarget, FiDollarSign } from 'react-icons/fi'
 import Button from '@/app/components/ui/Button'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import Header from '@/app/components/Header'
 
 export default function BudgetPage() {
   const silkSettings = useSilkSettings()
   const router = useRouter()
-  const scrollProgress = useScrollActivation(50)
 
   return (
     <div className="min-h-screen w-full text-white relative">
@@ -24,20 +23,7 @@ export default function BudgetPage() {
           rotation={silkSettings.rotation}
         />
       </div>
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2"><FiArrowLeft /></button>
-          <h1 className="text-lg font-semibold">Budget</h1>
-        </div>
-      </div>
+      <Header title="Budget" />
 
       <div className="max-w-md mx-auto px-4 pt-28 pb-10 relative z-10">
         <div className="text-center py-12">

@@ -13,6 +13,7 @@ import TransactionListItem from '@/app/components/TransactionListItem'
 import { getCategoryIcon, getCategoryIconById } from '@/lib/utils/categoryIcons'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import LiquidGlass from '@/components/LiquidGlass'
 
 export default function DashboardPage() {
   const silkSettings = useSilkSettings()
@@ -250,28 +251,50 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions - Circular Buttons */}
-        <div className="mb-6">
-          <div className="flex justify-around items-center gap-3 px-2">
-            {quickActions.map((action, index) => (
-              <Link
-                key={index}
-                href={action.href}
-                className="flex flex-col items-center gap-2 group"
+        <div className="mb-6 flex justify-around items-center gap-3">
+          {quickActions.map((action, index) => (
+            <Link
+              key={index}
+              href={action.href}
+              className="flex flex-col items-center gap-2 group"
+            >
+              <LiquidGlass
+                displacementScale={15}
+                blurAmount={3}
+                brightness={1}
+                borderRadius={9999}
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  width: '4rem',
+                  height: '4rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                className="hover:scale-110 transition-all"
               >
-                <div className="w-16 h-16 rounded-full bg-white/15 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/25 hover:scale-110 transition-all shadow-lg">
-                  <span className="text-3xl text-white">{action.icon}</span>
-                </div>
-                <div className="text-center">
-                  <p className="text-white text-xs font-medium">{action.label}</p>
-                  <p className="text-white/50 text-[10px]">{action.description}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+                <span className="text-3xl text-white">{action.icon}</span>
+              </LiquidGlass>
+              <div className="text-center">
+                <p className="text-white text-xs font-medium">{action.label}</p>
+                <p className="text-white/50 text-[10px]">{action.description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
 
         {/* Quick Analytics */}
-        <div className="backdrop-blur-2xl bg-white/10 rounded-3xl p-6 shadow-2xl border border-white/20 mb-6">
+        <LiquidGlass
+          displacementScale={15}
+          blurAmount={3}
+          brightness={1}
+          borderRadius={28}
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            padding: '1.5rem',
+            marginBottom: '1.5rem',
+          }}
+        >
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-white">Expense Analytics</h3>
             <Link href="/analytics" className="text-white/70 text-sm hover:text-white transition-colors">
@@ -295,7 +318,7 @@ export default function DashboardPage() {
             <p className="text-white/60 text-xs mb-1">Total spent</p>
             <p className="text-white text-3xl font-bold">${totalExpenses.toFixed(2)}</p>
           </div>
-        </div>
+        </LiquidGlass>
 
         {/* Recent Transactions */}
         <div>

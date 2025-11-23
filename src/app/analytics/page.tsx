@@ -1,18 +1,19 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { FiArrowLeft, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart, FiCalendar } from 'react-icons/fi'
+import { useState, useEffect, useMemo } from 'react'
+import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart, FiCalendar } from 'react-icons/fi'
 import { analyticsService } from '@/lib/services/analyticsService'
 import { toast } from '@/lib/utils/toast'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
+import { categoryService, Category } from '@/lib/services/categoryService'
+import { getCategoryIconById } from '@/lib/utils/categoryIcons'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import Header from '@/app/components/Header'
 
 export default function AnalyticsPage() {
   const silkSettings = useSilkSettings()
   const router = useRouter()
-  const scrollProgress = useScrollActivation(50)
 
   const [summaryData, setSummaryData] = useState<{
     totalIncome: number
@@ -41,6 +42,7 @@ export default function AnalyticsPage() {
     savingsAmount: number
   } | null>(null)
 
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -101,34 +103,31 @@ export default function AnalyticsPage() {
     fetchAnalyticsData()
   }, [])
 
-  // Helper function to get color class from hex color
-  const getColorClass = (hexColor: string): string => {
-    // Map common hex colors to Tailwind classes
-    const colorMap: Record<string, string> = {
-      '#ef4444': 'bg-red-400',
-      '#f97316': 'bg-orange-400',
-      '#fbbf24': 'bg-yellow-400',
-      '#84cc16': 'bg-lime-400',
-      '#22c55e': 'bg-green-400',
-      '#10b981': 'bg-emerald-400',
-      '#14b8a6': 'bg-teal-400',
-      '#06b6d4': 'bg-cyan-400',
-      '#3b82f6': 'bg-blue-400',
-      '#6366f1': 'bg-indigo-400',
-      '#8b5cf6': 'bg-violet-400',
-      '#a855f7': 'bg-purple-400',
-      '#ec4899': 'bg-pink-400',
-      '#f43f5e': 'bg-rose-400',
-    }
+  // Fetch categories for icons
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const [exp, inc] = await Promise.all([
+          categoryService.fetchCategories('EXPENSE'),
+          categoryService.fetchCategories('INCOME')
+        ])
+        const arr: Category[] = []
+        if (exp.success && exp.data) arr.push(...(Array.isArray(exp.data) ? exp.data : []))
+        if (inc.success && inc.data) arr.push(...(Array.isArray(inc.data) ? inc.data : []))
+        setCategories(arr)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    })()
+  }, [])
 
-    // Try to find exact match
-    if (colorMap[hexColor.toLowerCase()]) {
-      return colorMap[hexColor.toLowerCase()]
-    }
+  // Map category ID to category object
+  const categoryMap = useMemo(() => {
+    const m = new Map<string, Category>()
+    categories.forEach(c => m.set(c.id, c))
+    return m
+  }, [categories])
 
-    // Default fallback
-    return 'bg-indigo-400'
-  }
 
   // Format percentage change with sign
   const formatChange = (change: number): string => {
@@ -148,20 +147,7 @@ export default function AnalyticsPage() {
           rotation={silkSettings.rotation}
         />
       </div>
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2"><FiArrowLeft /></button>
-          <h1 className="text-lg font-semibold">Analytics</h1>
-        </div>
-      </div>
+      <Header title="Analytics" />
 
       <div className="max-w-md mx-auto px-4 pt-28 pb-24 relative z-10">
         {loading ? (
@@ -172,7 +158,7 @@ export default function AnalyticsPage() {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <FiTrendingUp className="text-green-400" />
                   <span className="text-xs text-white/60">Total Income</span>
@@ -187,7 +173,7 @@ export default function AnalyticsPage() {
                 )}
               </div>
               
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+              <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <FiTrendingDown className="text-red-400" />
                   <span className="text-xs text-white/60">Total Expenses</span>
@@ -203,72 +189,8 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {/* Expense Breakdown */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <FiPieChart className="text-xl" />
-                <h3 className="text-lg font-semibold">Expense Breakdown</h3>
-              </div>
-              
-              {expenseBreakdown.length === 0 ? (
-                <div className="text-center py-8 text-white/60">
-                  <p>No expense data available</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {expenseBreakdown.map((item) => (
-                    <div key={item.categoryId} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className={`w-4 h-4 rounded-full ${getColorClass(item.color)}`}
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <span className="text-sm">{item.categoryName}</span>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">${item.amount.toFixed(2)}</p>
-                        <p className="text-xs text-white/60">{item.percentage.toFixed(1)}%</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Monthly Trends */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <FiBarChart className="text-xl" />
-                <h3 className="text-lg font-semibold">Monthly Trends</h3>
-              </div>
-              
-              {monthlyTrends.length === 0 ? (
-                <div className="text-center py-8 text-white/60">
-                  <p>No trend data available</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {monthlyTrends.map((trend, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-white/60">{trend.month}</span>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-xs text-green-400">Income</p>
-                          <p className="text-sm font-semibold">${trend.income.toFixed(2)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-red-400">Expenses</p>
-                          <p className="text-sm font-semibold">${trend.expenses.toFixed(2)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Savings Rate */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 shadow-xl">
+            <div className="bg-white/10 rounded-2xl p-6 border border-white/20 backdrop-blur-lg mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <FiDollarSign className="text-xl" />
                 <h3 className="text-lg font-semibold">Savings Rate</h3>
@@ -293,6 +215,80 @@ export default function AnalyticsPage() {
               ) : (
                 <div className="text-center py-8 text-white/60">
                   <p>No savings data available</p>
+                </div>
+              )}
+            </div>
+
+            {/* Expense Breakdown */}
+            <div className="bg-white/10 rounded-2xl p-6 border border-white/20 backdrop-blur-lg mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FiPieChart className="text-xl" />
+                <h3 className="text-lg font-semibold">Expense Breakdown</h3>
+              </div>
+              
+              {expenseBreakdown.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  <p>No expense data available</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {expenseBreakdown.map((item) => (
+                    <div key={item.categoryId} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="text-white text-sm">
+                          {getCategoryIconById(item.categoryId, categoryMap)}
+                        </div>
+                        <span className="text-sm">{item.categoryName}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">${item.amount.toFixed(2)}</p>
+                        <p className="text-xs text-white/60">{item.percentage.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Monthly Trends */}
+            <div className="bg-white/10 rounded-2xl p-6 border border-white/20 backdrop-blur-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <FiBarChart className="text-xl" />
+                <h3 className="text-lg font-semibold">Monthly Trends</h3>
+              </div>
+              
+              {monthlyTrends.length === 0 ? (
+                <div className="text-center py-8 text-white/60">
+                  <p>No trend data available</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <span className="text-sm text-white/60 font-medium">Month</span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right w-20">
+                        <p className="text-xs text-green-400 font-medium">Income</p>
+                      </div>
+                      <div className="text-right w-20">
+                        <p className="text-xs text-red-400 font-medium">Expenses</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Data Rows */}
+                  {monthlyTrends.map((trend, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-white/60">{trend.month}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right w-20">
+                          <p className="text-sm font-semibold">${trend.income.toFixed(2)}</p>
+                        </div>
+                        <div className="text-right w-20">
+                          <p className="text-sm font-semibold">${trend.expenses.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

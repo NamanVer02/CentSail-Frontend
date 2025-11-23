@@ -2,21 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiUser, FiMail, FiPhone, FiLogOut, FiArrowLeft, FiEdit, FiX, FiTrash2 } from 'react-icons/fi'
+import { FiUser, FiMail, FiPhone, FiLogOut, FiEdit, FiX, FiTrash2 } from 'react-icons/fi'
 import { firebaseAuthService } from '@/lib/services/firebaseAuthService'
 import { authService } from '@/lib/services/authService'
 import { auth, storage } from '@/lib/config/firebase'
 import { updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { toast } from '@/lib/utils/toast'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import Header from '@/app/components/Header'
 
 export default function AccountPage() {
   const silkSettings = useSilkSettings()
   const router = useRouter()
-  const scrollProgress = useScrollActivation(50)
   const [displayName, setDisplayName] = useState<string>('')
   const [email, setEmail] = useState<string>('')
   const [phoneNumber, setPhoneNumber] = useState<string>('')
@@ -182,25 +181,18 @@ export default function AccountPage() {
           rotation={silkSettings.rotation}
         />
       </div>
-       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center justify-between rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiArrowLeft /></button>
-          <h1 className="text-lg font-semibold">Account</h1>
-          {!isEditing ? (
-            <button onClick={startEdit} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiEdit /></button>
+      <Header
+        title="Account"
+        rightAction={
+          !isEditing ? (
+            <button onClick={startEdit} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors">
+              <FiEdit />
+            </button>
           ) : (
-            <span className="w-10"/>
-          )}
-        </div>
-      </div>
+            <span className="w-10" />
+          )
+        }
+      />
 
       <div className="max-w-md mx-auto px-4 pt-28 pb-24 relative z-10">
         <div className="flex flex-col items-center mb-8">

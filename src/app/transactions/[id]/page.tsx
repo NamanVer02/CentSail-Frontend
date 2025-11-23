@@ -2,21 +2,21 @@
 
 import { use, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiEdit, FiX, FiCalendar, FiDollarSign } from 'react-icons/fi'
+import { FiEdit, FiX, FiCalendar, FiDollarSign } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 import { getCategoryIconById } from '@/lib/utils/categoryIcons'
+import Header from '@/app/components/Header'
+import LiquidGlass from '@/components/LiquidGlass'
 
 export default function TransactionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const silkSettings = useSilkSettings()
   const router = useRouter()
   const { id } = use(params)
-  const scrollProgress = useScrollActivation(50)
   const [entry, setEntry] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
@@ -248,36 +248,47 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
           rotation={silkSettings.rotation}
         />
       </div>
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center justify-between rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button onClick={() => router.back()} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiArrowLeft /></button>
-          <h1 className="text-lg font-semibold truncate">{entry.title}</h1>
-          {!isEditing ? (
-            <button onClick={startEdit} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors"><FiEdit /></button>
+      <Header
+        title=""
+        rightAction={
+          !isEditing ? (
+            <button onClick={startEdit} className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors">
+              <FiEdit />
+            </button>
           ) : (
             <span className="w-10" />
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       <div className="max-w-md mx-auto pt-32 px-4 relative z-10">
         {/* Amount */}
         <div className="flex flex-col items-center justify-center py-8">
-            <div className={`text-6xl p-5 rounded-full mb-4 bg-gradient-to-tr ${isIncome ? 'from-green-400/20 to-green-500/10' : 'from-white/20 to-white/10'}`}>💸</div>
-            <p className={`text-5xl font-bold ${isIncome ? 'text-green-300' : 'text-white'}`}>{isIncome ? '+' : ''}${Math.abs(entry.amount).toFixed(2)}</p>
-            <p className="text-white/60 text-sm mt-1">{categoryName}</p>
+            <LiquidGlass
+              displacementScale={15}
+              blurAmount={3}
+              brightness={1}
+              borderRadius={9999}
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                width: '5rem',
+                height: '5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '1rem',
+              }}
+            >
+              <div className="text-4xl text-white">
+                {getCategoryIconById(entry.categoryId, categoryMap)}
+              </div>
+            </LiquidGlass>
+            <p className="text-5xl font-bold text-white">{entry.title}</p>
+            <p className={`text-white/60 text-sm mt-1 ${isIncome ? 'text-green-300' : 'text-white'}`}>{isIncome ? '+' : ''}${Math.abs(entry.amount).toFixed(2)}</p>
         </div>
         
         {/* Details in a card */}
-        <div className="bg-white/5 rounded-2xl p-6 space-y-4 border border-white/10 shadow-xl">
+        <div className="bg-white/10 rounded-2xl p-6 space-y-4 border border-white/20 backdrop-blur-lg">
           <p className="text-xs text-white/50 uppercase tracking-wider">Transaction Details</p>
           <div className="flex justify-between items-center">
             <p className="text-white/70">Date</p>
@@ -316,7 +327,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
         </div>
 
         {/* Description */}
-        <div className="bg-white/5 rounded-2xl p-6 my-4 border border-white/10 shadow-xl">
+        <div className="bg-white/10 rounded-2xl p-6 my-4 border border-white/20 backdrop-blur-lg">
             <p className="text-xs text-white/50 uppercase tracking-wider">Note</p>
             <p className="text-white/80 mt-2 leading-relaxed">{entry.notes || '—'}</p>
         </div>

@@ -1,0 +1,7 @@
+# Ignore Examples folder from deployment
+Examples/
+
+# Ignore debug logs
+firebase-debug.log
+*.log
+

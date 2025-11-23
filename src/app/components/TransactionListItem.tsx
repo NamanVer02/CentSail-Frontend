@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Category } from '@/lib/services/categoryService'
 import { getCategoryIcon } from '@/lib/utils/categoryIcons'
+import LiquidGlass from '@/components/LiquidGlass'
 
 interface TransactionListItemProps {
   id: string
@@ -44,14 +45,25 @@ export default function TransactionListItem({
     <Link href={`/transactions/${id}`}>
       <div className="flex items-center justify-between py-3 border-b border-white/10 hover:bg-white/5 rounded-lg px-2 transition-all cursor-pointer">
         <div className="flex items-center gap-3">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white border-2 border-white/20"
-            style={{ backgroundColor: categoryColor + '40' }}
+          <LiquidGlass
+            displacementScale={15}
+            blurAmount={3}
+            brightness={1}
+            borderRadius={9999}
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              width: '3rem',
+              height: '3rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
           >
-            <span className="text-lg">
+            <span className="text-lg text-white">
               {getCategoryIcon(category)}
             </span>
-          </div>
+          </LiquidGlass>
           <div>
             <p className="font-medium text-sm text-white">{title}</p>
             <p className="text-white/50 text-xs">

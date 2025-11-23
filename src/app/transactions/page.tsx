@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { FiArrowLeft, FiSearch, FiChevronDown } from 'react-icons/fi'
+import { FiSearch, FiChevronDown, FiFilter } from 'react-icons/fi'
 import { entryService } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import Header from '@/app/components/Header'
+import CustomSelect from '@/app/components/ui/CustomSelect'
+import CustomDatePicker from '@/app/components/ui/CustomDatePicker'
 
 type EntryItem = {
   id: string
@@ -24,7 +26,6 @@ type EntryItem = {
 export default function TransactionsPage() {
   const silkSettings = useSilkSettings()
   const router = useRouter()
-  const scrollProgress = useScrollActivation(50)
   const [entries, setEntries] = useState<EntryItem[]>([])
   const [page, setPage] = useState(1)
   const pageSize = 20
@@ -237,21 +238,8 @@ export default function TransactionsPage() {
           rotation={silkSettings.rotation}
         />
       </div>
-      <div className="max-w-6xl mx-auto px-6 py-6 pb-24 relative z-10">
-        {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-6xl mx-4 mt-3 px-6 py-4 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button onClick={() => router.back()} className="text-2xl mr-4"><FiArrowLeft /></button>
-          <h1 className="text-2xl font-bold">All Transactions</h1>
-        </div>
-      </div>
+      <div className="max-w-6xl mx-auto px-6 pb-24 relative z-10">
+      <Header title="All Transactions" maxWidth="6xl" />
 
       <div className="pt-24">
         {/* Search and Filters */}
@@ -266,38 +254,44 @@ export default function TransactionsPage() {
               className="w-full bg-white/10 rounded-full py-3 pl-12 pr-4 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-            >
-              <option value="">All Types</option>
-              <option value="EXPENSE">Expense</option>
-              <option value="INCOME">Income</option>
-            </select>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-            >
-              <option value="">All Categories</option>
-              {filteredCategories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-            />
+          <div className="flex flex-wrap gap-3">
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur-lg flex-1 min-w-[150px]">
+              <CustomSelect
+                value={type}
+                onChange={(value) => setType(value)}
+                options={[
+                  { value: '', label: 'All Types' },
+                  { value: 'EXPENSE', label: 'Expense' },
+                  { value: 'INCOME', label: 'Income' },
+                ]}
+                placeholder="All Types"
+              />
+            </div>
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur-lg flex-1 min-w-[150px]">
+              <CustomSelect
+                value={categoryId}
+                onChange={(value) => setCategoryId(value)}
+                options={[
+                  { value: '', label: 'All Categories' },
+                  ...filteredCategories.map(c => ({ value: c.id, label: c.name }))
+                ]}
+                placeholder="All Categories"
+              />
+            </div>
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur-lg flex-1 min-w-[150px]">
+              <CustomDatePicker
+                value={startDate}
+                onChange={(value) => setStartDate(value)}
+                placeholder="Start Date"
+              />
+            </div>
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur-lg flex-1 min-w-[150px]">
+              <CustomDatePicker
+                value={endDate}
+                onChange={(value) => setEndDate(value)}
+                placeholder="End Date"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiArrowLeft, FiPlus, FiEdit2, FiTrash2, FiX, FiTag } from 'react-icons/fi'
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiTag } from 'react-icons/fi'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { toast } from '@/lib/utils/toast'
-import { useScrollActivation } from '@/lib/hooks/useScrollActivation'
 import { getCategoryIcon, getIconByName, availableIcons } from '@/lib/utils/categoryIcons'
 import ConfirmDialog from '@/app/components/ConfirmDialog'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
+import Header from '@/app/components/Header'
 
 export default function CategoriesManagementPage() {
   const silkSettings = useSilkSettings()
@@ -22,7 +22,6 @@ export default function CategoriesManagementPage() {
   const [formData, setFormData] = useState({ name: '', type: 'EXPENSE', color: '#6366f1', description: '', icon: 'tag' }) // color kept for backend compatibility but not displayed
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; categoryId: string | null }>({ isOpen: false, categoryId: null })
-  const scrollProgress = useScrollActivation(50)
 
   useEffect(() => {
     fetchCategories()
@@ -191,25 +190,7 @@ export default function CategoriesManagementPage() {
           rotation={silkSettings.rotation}
         />
       </div>
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div
-          className="pointer-events-auto w-full max-w-md mx-4 mt-3 px-4 py-3 flex items-center rounded-full border border-white/10 backdrop-blur-lg transition-all duration-200"
-          style={{
-            backgroundColor: `rgba(0, 0, 0, ${0.2 + scrollProgress * 0.3})`,
-            boxShadow: scrollProgress > 0 ? '0 10px 30px rgba(0,0,0,0.25)' : 'none',
-            borderColor: `rgba(255, 255, 255, ${0.1 * scrollProgress})`
-          }}
-        >
-          <button 
-            onClick={() => router.back()} 
-            className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors mr-2"
-          >
-            <FiArrowLeft />
-          </button>
-          <h1 className="text-lg font-semibold">Category Management</h1>
-        </div>
-      </div>
+      <Header title="Category Management" />
 
       <div className="max-w-md mx-auto px-4 pt-28 pb-24 relative z-10">
         {/* Limits Progress */}
