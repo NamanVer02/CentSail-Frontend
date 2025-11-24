@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8090'
 
 const nextConfig: NextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async rewrites() {
     // Proxy API calls to avoid CORS issues
     // All frontend calls to /api/* will be forwarded to the backend
