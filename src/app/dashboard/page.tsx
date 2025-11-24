@@ -5,7 +5,7 @@ import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
 import { FiPlus, FiRepeat, FiBarChart2, FiTarget, FiArrowUp, FiArrowDown } from 'react-icons/fi'
 
-import { entryService, type ListRequest } from '@/lib/services/entryService'
+import { entryService, type Entry, type ListRequest } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { analyticsService, CategoryExpenseData } from '@/lib/services/analyticsService'
 import { auth } from '@/lib/config/firebase'
@@ -79,6 +79,14 @@ export default function DashboardPage() {
     })
   })
 
+  const formatEntryDate = (dateValue: Entry['date']): string => {
+    if (typeof dateValue === 'string') {
+      return dateValue
+    }
+    const parsed = parseDateValue(dateValue)
+    return parsed ? parsed.toISOString() : ''
+  }
+
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -97,7 +105,16 @@ export default function DashboardPage() {
         }
         const res = await entryService.getEntries(request)
         const entriesData = res.data?.entries
-        const items: RecentEntry[] = Array.isArray(entriesData) ? entriesData : []
+        const items: RecentEntry[] = Array.isArray(entriesData)
+          ? entriesData.map((entry): RecentEntry => ({
+              id: entry.id,
+              title: entry.title,
+              type: entry.type,
+              amount: entry.amount,
+              categoryId: entry.categoryId,
+              date: formatEntryDate(entry.date),
+            }))
+          : []
         if (mounted) setRecentTransactions(items)
       } finally {
         setLoadingRecent(false)

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { FiSend, FiBarChart2, FiRefreshCw } from "react-icons/fi";
-import { chatService } from '@/lib/services/chatService'
+import { chatService, type ChatHistoryTurn } from '@/lib/services/chatService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
 import ReactMarkdown from 'react-markdown'
@@ -98,10 +98,10 @@ const ChatPage = () => {
         sender: 'me'
       };
 
-      const historyForRequest = messages
+      const historyForRequest: ChatHistoryTurn[] = messages
         .filter(m => m.sender === 'me' || m.sender === 'bot')
         .slice(-MAX_HISTORY_TURNS)
-        .map(m => ({
+        .map((m): ChatHistoryTurn => ({
           role: m.sender === 'me' ? 'USER' : 'ASSISTANT',
           content: m.text
         }))

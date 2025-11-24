@@ -132,7 +132,7 @@ class AnalyticsService {
         const cacheKey = `dashboard-analytics-${userId}`
         
         // Check cache first
-        const cached = cacheService.getDashboard(cacheKey)
+        const cached = cacheService.getDashboard<DashboardAnalyticsResponse>(cacheKey)
         if (cached) {
           return {
             success: true,
@@ -194,7 +194,7 @@ class AnalyticsService {
       const cacheKey = `summary-${userId}`
       
       // Check cache first
-      const cached = cacheService.getAnalytics(cacheKey)
+      const cached = cacheService.getAnalytics<SummaryResponse>(cacheKey)
       if (cached) {
         return {
           success: true,
@@ -254,7 +254,7 @@ class AnalyticsService {
       const cacheKey = `expense-breakdown-${userId}`
       
       // Check cache first
-      const cached = cacheService.getAnalytics(cacheKey)
+      const cached = cacheService.getAnalytics<ExpenseBreakdownResponse>(cacheKey)
       if (cached) {
         return {
           success: true,
@@ -314,7 +314,7 @@ class AnalyticsService {
       const cacheKey = `monthly-trends-${months}-${userId}`
       
       // Check cache first
-      const cached = cacheService.getAnalytics(cacheKey)
+      const cached = cacheService.getAnalytics<MonthlyTrendsResponse>(cacheKey)
       if (cached) {
         return {
           success: true,
@@ -375,7 +375,7 @@ class AnalyticsService {
       const cacheKey = `savings-rate-${userId}`
       
       // Check cache first
-      const cached = cacheService.getAnalytics(cacheKey)
+      const cached = cacheService.getAnalytics<SavingsRateResponse>(cacheKey)
       if (cached) {
         return {
           success: true,

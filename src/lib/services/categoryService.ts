@@ -88,7 +88,7 @@ class CategoryService {
         // If no userId, proceed without cache
       } else {
         // Check cache first
-        const cached = cacheService.getCategories(normalizedType, userId)
+        const cached = cacheService.getCategories<Category>(normalizedType, userId)
         if (cached) {
           return {
             success: true,

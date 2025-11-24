@@ -162,6 +162,17 @@ class EntryService {
   }
 
   async getEntries(listRequest: ListRequest): Promise<ApiResponse<EntryListResponse>> {
+    const buildEmptyResponse = (): EntryListResponse => ({
+      entries: [],
+      pagination: {
+        page: listRequest.page ?? 1,
+        pageSize: listRequest.pageSize ?? 10,
+        totalItems: 0,
+        totalPages: 0,
+        hasNext: false,
+      },
+    })
+
     try {
       // Wait for auth if needed
       if (!auth.currentUser) {
@@ -206,7 +217,7 @@ class EntryService {
       })
 
       if (await this.handleUnauthorized(response)) {
-        return { success: false, message: 'Session expired. Please log in again.', data: [] }
+        return { success: false, message: 'Session expired. Please log in again.', data: buildEmptyResponse() }
       }
 
       if (!response.ok) {
@@ -214,7 +225,7 @@ class EntryService {
         return {
           success: false,
           message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-          data: []
+          data: buildEmptyResponse()
         }
       }
 
@@ -246,13 +257,13 @@ class EntryService {
         return {
           success: false,
           message: 'User not authenticated. Please log in again.',
-          data: []
+          data: buildEmptyResponse()
         }
       }
       return {
         success: false,
         message: 'Failed to fetch entries',
-        data: []
+        data: buildEmptyResponse()
       }
     }
   }
