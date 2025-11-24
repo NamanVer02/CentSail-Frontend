@@ -2,6 +2,7 @@ import { auth } from '@/lib/config/firebase'
 import { cacheService } from './cacheService'
 import { sessionService } from './sessionService'
 import { handleUnauthorizedSession } from '@/lib/utils/sessionGuard'
+import type { DateValue } from '@/lib/types/date'
 
 // Route through Next.js rewrite proxy to avoid CORS/proxy issues
 const API_BASE_URL = '/api'
@@ -13,7 +14,7 @@ export interface Entry {
   type: string
   amount: number
   categoryId: string
-  date: string
+  date: DateValue
   notes?: string
   createdAt: string
   updatedAt: string
@@ -59,6 +60,19 @@ export interface ApiResponse<T> {
   success: boolean
   message: string
   data?: T
+}
+
+export interface EntryListPagination {
+  page?: number
+  pageSize?: number
+  totalPages?: number
+  totalItems?: number
+  hasNext?: boolean
+}
+
+export interface EntryListResponse {
+  entries: Entry[]
+  pagination?: EntryListPagination
 }
 
 class EntryService {
@@ -127,8 +141,8 @@ class EntryService {
       if (data.success) {
         const userId = auth.currentUser?.uid
         cacheService.invalidateEntries(userId)
-        cacheService.invalidateAnalytics(userId)
-        cacheService.invalidateDashboard(userId)
+        cacheService.invalidateAnalytics()
+        cacheService.invalidateDashboard()
       }
       
       return data
@@ -147,7 +161,7 @@ class EntryService {
     }
   }
 
-  async getEntries(listRequest: ListRequest): Promise<ApiResponse<Entry[]>> {
+  async getEntries(listRequest: ListRequest): Promise<ApiResponse<EntryListResponse>> {
     try {
       // Wait for auth if needed
       if (!auth.currentUser) {
@@ -177,9 +191,9 @@ class EntryService {
         }
         
         // Check cache first
-        const cached = cacheService.getEntries(cacheParams)
+        const cached = cacheService.getEntries<ApiResponse<EntryListResponse>>(cacheParams)
         if (cached) {
-          return cached as ApiResponse<Entry[]>
+          return cached
         }
       }
       
@@ -222,7 +236,7 @@ class EntryService {
           maxAmount: listRequest.maxAmount,
           searchTerm: listRequest.searchTerm
         }
-        cacheService.setEntries(data, cacheParams)
+        cacheService.setEntries<ApiResponse<EntryListResponse>>(data, cacheParams)
       }
       
       return data
@@ -314,8 +328,8 @@ class EntryService {
       if (data.success) {
         const userId = auth.currentUser?.uid
         cacheService.invalidateEntries(userId)
-        cacheService.invalidateAnalytics(userId)
-        cacheService.invalidateDashboard(userId)
+        cacheService.invalidateAnalytics()
+        cacheService.invalidateDashboard()
       }
       
       return data
@@ -334,7 +348,7 @@ class EntryService {
     }
   }
 
-  async deleteEntry(entryId: string): Promise<ApiResponse<any>> {
+  async deleteEntry(entryId: string): Promise<ApiResponse<null>> {
     try {
       const headers = await this.getAuthHeaders()
       
@@ -362,8 +376,8 @@ class EntryService {
       if (data.success) {
         const userId = auth.currentUser?.uid
         cacheService.invalidateEntries(userId)
-        cacheService.invalidateAnalytics(userId)
-        cacheService.invalidateDashboard(userId)
+        cacheService.invalidateAnalytics()
+        cacheService.invalidateDashboard()
       }
       
       return data

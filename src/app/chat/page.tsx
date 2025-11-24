@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { FiSend, FiBarChart2, FiRefreshCw } from "react-icons/fi";
-import { useRouter } from "next/navigation";
 import { chatService } from '@/lib/services/chatService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
@@ -24,7 +23,6 @@ const MAX_HISTORY_TURNS = 20
 
 const ChatPage = () => {
     const silkSettings = useSilkSettings()
-    const router = useRouter();
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');

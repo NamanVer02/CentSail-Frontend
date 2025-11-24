@@ -1,9 +1,8 @@
 'use client'
 
 import { use, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { FiEdit, FiX, FiCalendar, FiDollarSign } from 'react-icons/fi'
-import { entryService } from '@/lib/services/entryService'
+import { entryService, type Entry } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import { toast } from '@/lib/utils/toast'
@@ -12,12 +11,12 @@ import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 import { getCategoryIconById } from '@/lib/utils/categoryIcons'
 import Header from '@/app/components/Header'
 import LiquidGlass from '@/components/LiquidGlass'
+import { parseDateValue } from '@/lib/utils/date'
 
 export default function TransactionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const silkSettings = useSilkSettings()
-  const router = useRouter()
   const { id } = use(params)
-  const [entry, setEntry] = useState<any | null>(null)
+  const [entry, setEntry] = useState<Entry | null>(null)
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
   const [isEditing, setIsEditing] = useState(false)
@@ -36,8 +35,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
     ;(async () => {
       try {
         const res = await entryService.getEntry(id)
-        // backend returns { success, data: entry }
-        if (res.success && res.data && mounted) setEntry(res.data as any)
+        if (res.success && res.data && mounted) setEntry(res.data)
       } finally {
         setLoading(false)
       }
@@ -83,39 +81,12 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
     fetchCategories()
   }, [isEditing, formData.type])
 
-  // Helper function to convert Firestore Timestamp or ISO string to Date
-  const parseDate = (dateValue: any): Date | null => {
-    if (!dateValue) return null
-    
-    try {
-      // If it's a Firestore Timestamp object (has seconds and nanos)
-      if (typeof dateValue === 'object' && dateValue.seconds !== undefined) {
-        // Convert seconds to milliseconds and add nanos converted to milliseconds
-        // nanos are in nanoseconds (1e9), so divide by 1e6 to get milliseconds
-        const milliseconds = dateValue.seconds * 1000 + Math.floor((dateValue.nanos || 0) / 1000000)
-        return new Date(milliseconds)
-      }
-      
-      // If it's already a string (ISO format)
-      if (typeof dateValue === 'string') {
-        const date = new Date(dateValue)
-        if (!isNaN(date.getTime())) {
-          return date
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing date:', error)
-    }
-    
-    return null
-  }
-
   const startEdit = () => {
     if (!entry) return
     // Format date from ISO string or Timestamp object to YYYY-MM-DD for input
     let formattedDate = new Date().toISOString().split('T')[0] // Default to today
     
-    const dateObj = parseDate(entry.date)
+    const dateObj = parseDateValue(entry.date)
     if (dateObj) {
       formattedDate = dateObj.toISOString().split('T')[0]
     }
@@ -174,7 +145,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
         // Refresh the entry data
         const res = await entryService.getEntry(id)
         if (res.success && res.data) {
-          setEntry(res.data as any)
+          setEntry(res.data)
         }
         setIsEditing(false)
       } else {
@@ -294,7 +265,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
             <p className="text-white/70">Date</p>
             <p className="font-medium">{
               (() => {
-                const dateObj = parseDate(entry.date)
+                const dateObj = parseDateValue(entry.date)
                 return dateObj ? dateObj.toLocaleDateString('en-US', { 
                   year: 'numeric', 
                   month: 'long', 
@@ -307,7 +278,7 @@ export default function TransactionDetailsPage({ params }: { params: Promise<{ i
             <p className="text-white/70">Time</p>
             <p className="font-medium">{
               (() => {
-                const dateObj = parseDate(entry.date)
+                const dateObj = parseDateValue(entry.date)
                 return dateObj ? dateObj.toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit',

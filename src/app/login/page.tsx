@@ -34,14 +34,16 @@ export default function LoginPage() {
       await firebaseAuthService.signIn(email.trim(), password)
       try {
         await sessionService.registerSession()
-      } catch (sessionError: any) {
+      } catch (sessionError) {
+        const message = sessionError instanceof Error ? sessionError.message : 'Failed to start session. Please try again.'
         await firebaseAuthService.signOut()
-        throw new Error(sessionError?.message || 'Failed to start session. Please try again.')
+        throw new Error(message)
       }
       toast.success("Login successful!")
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sign in"
+      setError(message)
       setIsLoading(false)
     }
   }
@@ -77,15 +79,17 @@ export default function LoginPage() {
 
       try {
         await sessionService.registerSession()
-      } catch (sessionError: any) {
+      } catch (sessionError) {
+        const message = sessionError instanceof Error ? sessionError.message : 'Failed to start session. Please try again.'
         await firebaseAuthService.signOut()
-        throw new Error(sessionError?.message || 'Failed to start session. Please try again.')
+        throw new Error(message)
       }
 
       toast.success(isNewUser ? "Account created successfully!" : "Login successful!")
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sign in with Google"
+      setError(message)
       setIsLoading(false)
     }
   }
@@ -185,7 +189,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center text-sm text-white/70">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <a href="/signup" className="text-white font-medium hover:underline">
             Sign up
           </a>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiTag } from 'react-icons/fi'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { toast } from '@/lib/utils/toast'
@@ -13,7 +12,6 @@ import Header from '@/app/components/Header'
 
 export default function CategoriesManagementPage() {
   const silkSettings = useSilkSettings()
-  const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)

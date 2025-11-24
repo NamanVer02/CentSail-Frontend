@@ -9,15 +9,12 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
   RecaptchaVerifier,
-  signInWithCredential,
-  PhoneAuthProvider,
   GoogleAuthProvider,
   signInWithPopup,
-  linkWithCredential,
-  PhoneAuthCredential,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
-  signInWithEmailLink
+  signInWithEmailLink,
+  getAdditionalUserInfo
 } from 'firebase/auth';
 import { auth } from '@/lib/config/firebase';
 import { sessionService } from './sessionService';
@@ -97,8 +94,8 @@ export class FirebaseAuthService {
       const userCredential = await signInWithPopup(auth, provider);
       
       // Check if this is a new user (first time signing in)
-      // Firebase's additionalUserInfo is available in the result
-      const isNewUser = (userCredential as any).additionalUserInfo?.isNewUser ?? false;
+      const additionalInfo = getAdditionalUserInfo(userCredential);
+      const isNewUser = additionalInfo?.isNewUser ?? false;
       
       return {
         user: this.mapFirebaseUser(userCredential.user),

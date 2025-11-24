@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Category } from '@/lib/services/categoryService'
 import { getCategoryIcon } from '@/lib/utils/categoryIcons'
 import LiquidGlass from '@/components/LiquidGlass'
+import { DateValue } from '@/lib/types/date'
 
 interface TransactionListItemProps {
   id: string
@@ -11,10 +12,10 @@ interface TransactionListItemProps {
   type: string
   amount: number
   categoryId: string
-  date: any
+  date: DateValue
   categoryIdToCategory: Map<string, Category>
   categoryIdToName: Map<string, string>
-  parseDate: (dateValue: any) => Date | null
+  parseDate: (dateValue: DateValue) => Date | null
 }
 
 export default function TransactionListItem({
@@ -29,7 +30,6 @@ export default function TransactionListItem({
   parseDate,
 }: TransactionListItemProps) {
   const category = categoryIdToCategory.get(categoryId)
-  const categoryColor = category?.color || '#6366f1'
   const categoryName = categoryIdToName.get(categoryId) || 'Category'
 
   const dateObj = parseDate(date)

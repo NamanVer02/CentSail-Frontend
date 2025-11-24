@@ -52,15 +52,17 @@ export default function SignupPage() {
 
       try {
         await sessionService.registerSession()
-      } catch (sessionError: any) {
+      } catch (sessionError) {
+        const message = sessionError instanceof Error ? sessionError.message : 'Failed to start session. Please try again.'
         await firebaseAuthService.signOut()
-        throw new Error(sessionError?.message || 'Failed to start session. Please try again.')
+        throw new Error(message)
       }
 
       toast.success("Account created successfully!")
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message || "Failed to create account")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create account"
+      setError(message)
       setIsLoading(false)
     }
   }
@@ -71,7 +73,7 @@ export default function SignupPage() {
 
     try {
       const result = await firebaseAuthService.signInWithGoogle()
-      const { user, isNewUser } = result
+      const { user } = result
 
       // Always call backend signup for new users (creates default categories)
       // For existing users signing up again, this will be idempotent on backend
@@ -96,15 +98,17 @@ export default function SignupPage() {
 
       try {
         await sessionService.registerSession()
-      } catch (sessionError: any) {
+      } catch (sessionError) {
+        const message = sessionError instanceof Error ? sessionError.message : 'Failed to start session. Please try again.'
         await firebaseAuthService.signOut()
-        throw new Error(sessionError?.message || 'Failed to start session. Please try again.')
+        throw new Error(message)
       }
 
       toast.success("Account created successfully!")
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message || "Failed to sign up with Google")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sign up with Google"
+      setError(message)
       setIsLoading(false)
     }
   }

@@ -199,38 +199,6 @@ export default function AddTransactionPage() {
     }
   }
 
-  const colorOptions = [
-    '#ef4444', // red
-    '#3b82f6', // blue
-    '#22c55e', // green
-    '#eab308', // yellow
-    '#a855f7', // purple
-    '#ec4899', // pink
-    '#6366f1', // indigo
-    '#f97316', // orange
-    '#14b8a6', // teal
-  ]
-
-  // Helper function to get category color or default
-  const getCategoryColor = (color?: string) => {
-    if (!color) return '#6366f1' // Default indigo
-    // If color is a hex code, return it; otherwise try to parse it
-    if (color.startsWith('#')) return color
-    // If it's a Tailwind color class, convert common ones
-    const colorMap: Record<string, string> = {
-      'red': '#ef4444',
-      'blue': '#3b82f6',
-      'green': '#22c55e',
-      'yellow': '#eab308',
-      'purple': '#a855f7',
-      'pink': '#ec4899',
-      'indigo': '#6366f1',
-      'orange': '#f97316',
-      'teal': '#14b8a6',
-    }
-    return colorMap[color.toLowerCase()] || color
-  }
-
   return (
     <div className="min-h-screen w-full text-white pb-8 relative">
       {/* Silk Background */}

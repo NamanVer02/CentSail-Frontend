@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { FiUser, FiMail, FiPhone, FiLogOut, FiEdit, FiX, FiTrash2 } from 'react-icons/fi'
 import { firebaseAuthService } from '@/lib/services/firebaseAuthService'
 import { authService } from '@/lib/services/authService'
@@ -76,16 +77,23 @@ export default function AccountPage() {
     setEmailPassword('')
   }
 
+  const sanitizeNullable = (value: string) => {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+
   const saveEdit = async () => {
     if (!auth.currentUser) return
     setSaving(true)
     try {
+      const sanitizedName = sanitizeNullable(pendingName || '')
+      const sanitizedPhoto = sanitizeNullable(pendingPhoto || '')
       await updateProfile(auth.currentUser, {
-        displayName: (pendingName || '').trim() || null as any,
-        photoURL: (pendingPhoto || '').trim() || null as any,
+        displayName: sanitizedName,
+        photoURL: sanitizedPhoto,
       })
-      setDisplayName((pendingName || '').trim())
-      setPhotoURL((pendingPhoto || '').trim())
+      setDisplayName(sanitizedName ?? '')
+      setPhotoURL(sanitizedPhoto ?? '')
       const trimmedEmail = (pendingEmail || '').trim()
       if (trimmedEmail && trimmedEmail !== email) {
         if (!emailPassword) {
@@ -103,8 +111,9 @@ export default function AccountPage() {
       }
       setIsEditing(false)
       toast.success('Profile updated')
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update profile')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update profile'
+      toast.error(message)
     } finally {
       setSaving(false)
     }
@@ -141,9 +150,10 @@ export default function AccountPage() {
       } else {
         toast.error(result.message || 'Failed to delete account')
       }
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete account'
       console.error('Delete account failed:', error)
-      toast.error(error.message || 'Failed to delete account')
+      toast.error(message)
     } finally {
       setDeleting(false)
     }
@@ -162,8 +172,9 @@ export default function AccountPage() {
       const url = await getDownloadURL(sref)
       setPendingPhoto(url)
       toast.success('Photo uploaded')
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to upload image')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to upload image'
+      toast.error(message)
     }
   }
 
@@ -198,7 +209,14 @@ export default function AccountPage() {
         <div className="flex flex-col items-center mb-8">
           {/* View-only header; editing moved to modal */}
           {photoURL ? (
-            <img src={photoURL} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30" />
+            <Image
+              src={photoURL}
+              alt="Profile"
+              width={96}
+              height={96}
+              unoptimized
+              className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-white/30"
+            />
           ) : (
             <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-4 border-2 border-white/30">
               <FiUser className="text-5xl text-white" />
@@ -270,7 +288,14 @@ export default function AccountPage() {
             <div className="flex flex-col items-center mb-6">
               <button onClick={onPickPhoto} className="rounded-full transition-transform hover:scale-105">
                 {pendingPhoto ? (
-                  <img src={pendingPhoto} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-white/30" />
+                  <Image
+                    src={pendingPhoto}
+                    alt="Profile"
+                    width={96}
+                    height={96}
+                    unoptimized
+                    className="w-24 h-24 rounded-full object-cover mb-2 border-2 border-white/30"
+                  />
                 ) : (
                   <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-2 border-2 border-white/30">
                     <FiUser className="text-5xl text-white" />

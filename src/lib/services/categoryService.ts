@@ -297,7 +297,7 @@ class CategoryService {
     }
   }
 
-  async deleteCategory(categoryId: string): Promise<ApiResponse<any>> {
+  async deleteCategory(categoryId: string): Promise<ApiResponse<null>> {
     try {
       // Wait for authentication if user is not immediately available
       if (!auth.currentUser) {

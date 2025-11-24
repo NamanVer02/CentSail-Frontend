@@ -69,7 +69,7 @@ export default function ColorPicker({ value, onChange }: ColorPickerProps) {
         onChange(hex)
       }
     }
-  }, [hue, saturation, lightness, isOpen])
+  }, [hue, saturation, lightness, isOpen, onChange, value])
 
   // Close on outside click
   useEffect(() => {

@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { FiSearch, FiChevronDown, FiFilter } from 'react-icons/fi'
-import { entryService } from '@/lib/services/entryService'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FiSearch } from 'react-icons/fi'
+import { entryService, type ListRequest } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
@@ -13,6 +11,8 @@ import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 import Header from '@/app/components/Header'
 import CustomSelect from '@/app/components/ui/CustomSelect'
 import CustomDatePicker from '@/app/components/ui/CustomDatePicker'
+import { parseDateValue } from '@/lib/utils/date'
+import type { DateValue } from '@/lib/types/date'
 
 type EntryItem = {
   id: string
@@ -20,45 +20,17 @@ type EntryItem = {
   type: string
   amount: number
   categoryId: string
-  date: string
+  date: DateValue
 }
 
 export default function TransactionsPage() {
   const silkSettings = useSilkSettings()
-  const router = useRouter()
   const [entries, setEntries] = useState<EntryItem[]>([])
   const [page, setPage] = useState(1)
   const pageSize = 20
   const [hasNext, setHasNext] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isInitial, setIsInitial] = useState(true)
-
-  // Helper function to convert Firestore Timestamp or ISO string to Date
-  const parseDate = (dateValue: any): Date | null => {
-    if (!dateValue) return null
-    
-    try {
-      // If it's a Firestore Timestamp object (has seconds and nanos)
-      if (typeof dateValue === 'object' && dateValue.seconds !== undefined) {
-        // Convert seconds to milliseconds and add nanos converted to milliseconds
-        // nanos are in nanoseconds (1e9), so divide by 1e6 to get milliseconds
-        const milliseconds = dateValue.seconds * 1000 + Math.floor((dateValue.nanos || 0) / 1000000)
-        return new Date(milliseconds)
-      }
-      
-      // If it's already a string (ISO format)
-      if (typeof dateValue === 'string') {
-        const date = new Date(dateValue)
-        if (!isNaN(date.getTime())) {
-          return date
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing date:', error)
-    }
-    
-    return null
-  }
 
   // filters
   const [searchTerm, setSearchTerm] = useState('')
@@ -150,7 +122,7 @@ export default function TransactionsPage() {
   }
 
   // fetch entries
-  const fetchPage = async (reset = false) => {
+  const fetchPage = useCallback(async (reset = false) => {
     if (isLoading || fetchingRef.current) return
     fetchingRef.current = true
     setIsLoading(true)
@@ -167,7 +139,7 @@ export default function TransactionsPage() {
         }
       }
 
-      const req: any = {
+      const req: ListRequest = {
         userId: uid,
         page: reset ? 1 : page,
         pageSize,
@@ -181,11 +153,10 @@ export default function TransactionsPage() {
       if (endDate) req.endDate = new Date(endDate + 'T23:59:59.999Z').toISOString()
 
       const res = await entryService.getEntries(req)
-      // backend returns { success, data: { entries, pagination } }
-      const payload: any = res.data || {}
-      const newItems: EntryItem[] = Array.isArray(payload.entries) ? payload.entries : []
-      const pagination: any = payload.pagination || {}
-      setHasNext(!!pagination.hasNext)
+      const payload = res.data
+      const entriesData = payload?.entries
+      const newItems: EntryItem[] = Array.isArray(entriesData) ? entriesData : []
+      setHasNext(Boolean(payload?.pagination?.hasNext))
 
       // Deduplicate before setting state
       if (reset) {
@@ -195,13 +166,13 @@ export default function TransactionsPage() {
       }
       setPage(prev => (reset ? 2 : prev + 1))
       setIsInitial(false)
-    } catch (e) {
-      // swallow; optionally add toast
+    } catch (error) {
+      console.error('Error fetching entries:', error)
     } finally {
       setIsLoading(false)
       fetchingRef.current = false
     }
-  }
+  }, [categoryId, debouncedSearch, endDate, isLoading, page, pageSize, startDate, type])
 
   // reset and refetch when filters change
   useEffect(() => {
@@ -209,8 +180,7 @@ export default function TransactionsPage() {
     setPage(1)
     setHasNext(true)
     fetchPage(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, type, categoryId, startDate, endDate])
+  }, [fetchPage])
 
   // infinite scroll observer
   useEffect(() => {
@@ -224,7 +194,7 @@ export default function TransactionsPage() {
     }, { rootMargin: '200px' })
     io.observe(el)
     return () => io.unobserve(el)
-  }, [hasNext, isLoading, page])
+  }, [fetchPage, hasNext, isLoading])
 
   return (
     <div className="min-h-screen w-full text-white relative">
@@ -309,7 +279,7 @@ export default function TransactionsPage() {
               date={entry.date}
               categoryIdToCategory={categoryIdToCategory}
               categoryIdToName={categoryIdToName}
-              parseDate={parseDate}
+              parseDate={parseDateValue}
             />
           ))}
           {/* Loading / Sentinel */}

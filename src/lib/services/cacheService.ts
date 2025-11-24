@@ -9,8 +9,15 @@ interface CacheEntry<T> {
   ttl: number // Time to live in milliseconds
 }
 
+declare global {
+  interface Window {
+    __cacheServiceInstance?: Map<string, CacheEntry<unknown>>
+    __cacheService?: CacheService
+  }
+}
+
 class CacheService {
-  private cache: Map<string, CacheEntry<any>>
+  private cache: Map<string, CacheEntry<unknown>>
   
   // Default TTL values (in milliseconds)
   private readonly DEFAULT_TTL = {
@@ -23,14 +30,11 @@ class CacheService {
   constructor() {
     // Use a global cache to persist across hot reloads in development
     if (typeof window !== 'undefined') {
-      // @ts-ignore - Add cache to window for persistence
       if (!window.__cacheServiceInstance) {
         this.cache = new Map()
-        // @ts-ignore
         window.__cacheServiceInstance = this.cache
       } else {
         // Reuse existing cache from previous hot reload
-        // @ts-ignore
         this.cache = window.__cacheServiceInstance
       }
     } else {
@@ -43,12 +47,12 @@ class CacheService {
    * Generate a cache key from parameters
    * Uses consistent serialization to ensure keys match between get and set
    */
-  private generateKey(prefix: string, params?: Record<string, any>): string {
+  private generateKey(prefix: string, params?: Record<string, unknown>): string {
     if (!params || Object.keys(params).length === 0) {
       return prefix
     }
     // Filter out undefined/null values and normalize
-    const normalizedParams: Record<string, any> = {}
+    const normalizedParams: Record<string, unknown> = {}
     Object.keys(params)
       .sort()
       .forEach(key => {
@@ -59,10 +63,11 @@ class CacheService {
             normalizedParams[key] = value.toUpperCase()
           } else if (typeof value === 'object' && !Array.isArray(value)) {
             // For objects, sort keys and stringify consistently
-            const sortedObj: Record<string, any> = {}
-            Object.keys(value).sort().forEach(k => {
-              if (value[k] !== undefined && value[k] !== null) {
-                sortedObj[k] = value[k]
+            const sortedObj: Record<string, unknown> = {}
+            Object.keys(value as Record<string, unknown>).sort().forEach(k => {
+              const nestedValue = (value as Record<string, unknown>)[k]
+              if (nestedValue !== undefined && nestedValue !== null) {
+                sortedObj[k] = nestedValue
               }
             })
             normalizedParams[key] = sortedObj
@@ -105,14 +110,10 @@ class CacheService {
   get<T>(key: string): T | null {
     // Verify cache instance is correct
     const cacheSize = this.cache.size
-    if (cacheSize === 0) {
-      // Check if we lost the cache reference
-      if (typeof window !== 'undefined') {
-        // @ts-ignore
-        const globalCache = window.__cacheServiceInstance
-        if (globalCache && globalCache.size > 0) {
-          this.cache = globalCache
-        }
+    if (cacheSize === 0 && typeof window !== 'undefined') {
+      const globalCache = window.__cacheServiceInstance
+      if (globalCache && globalCache.size > 0) {
+        this.cache = globalCache
       }
     }
     
@@ -139,7 +140,6 @@ class CacheService {
   set<T>(key: string, data: T, ttl?: number): void {
     // Ensure we're using the persistent cache instance
     if (typeof window !== 'undefined') {
-      // @ts-ignore
       const globalCache = window.__cacheServiceInstance
       if (globalCache && globalCache !== this.cache) {
         this.cache = globalCache
@@ -194,12 +194,12 @@ class CacheService {
   /**
    * Cache categories
    */
-  getCategories(type?: string, userId?: string): any[] | null {
+  getCategories<T = unknown>(type?: string, userId?: string): T[] | null {
     const key = this.generateKey('categories', { type, userId })
-    return this.get<any[]>(key)
+    return this.get<T[]>(key)
   }
 
-  setCategories(data: any[], type?: string, userId?: string): void {
+  setCategories<T>(data: T[], type?: string, userId?: string): void {
     const key = this.generateKey('categories', { type, userId })
     this.set(key, data, this.DEFAULT_TTL.CATEGORIES)
   }
@@ -215,12 +215,12 @@ class CacheService {
   /**
    * Cache entries
    */
-  getEntries(params: Record<string, any>): any | null {
+  getEntries<T>(params: Record<string, unknown>): T | null {
     const key = this.generateKey('entries', params)
-    return this.get<any>(key)
+    return this.get<T>(key)
   }
 
-  setEntries(data: any, params: Record<string, any>): void {
+  setEntries<T>(data: T, params: Record<string, unknown>): void {
     const key = this.generateKey('entries', params)
     this.set(key, data, this.DEFAULT_TTL.ENTRIES)
   }
@@ -236,30 +236,30 @@ class CacheService {
   /**
    * Cache analytics
    */
-  getAnalytics(key: string): any | null {
-    return this.get<any>(`analytics|${key}`)
+  getAnalytics<T>(key: string): T | null {
+    return this.get<T>(`analytics|${key}`)
   }
 
-  setAnalytics(key: string, data: any): void {
+  setAnalytics<T>(key: string, data: T): void {
     this.set(`analytics|${key}`, data, this.DEFAULT_TTL.ANALYTICS)
   }
 
-  invalidateAnalytics(userId?: string): void {
+  invalidateAnalytics(): void {
     this.deleteByPrefix('analytics')
   }
 
   /**
    * Cache dashboard data
    */
-  getDashboard(key: string): any | null {
-    return this.get<any>(`dashboard|${key}`)
+  getDashboard<T>(key: string): T | null {
+    return this.get<T>(`dashboard|${key}`)
   }
 
-  setDashboard(key: string, data: any): void {
+  setDashboard<T>(key: string, data: T): void {
     this.set(`dashboard|${key}`, data, this.DEFAULT_TTL.DASHBOARD)
   }
 
-  invalidateDashboard(userId?: string): void {
+  invalidateDashboard(): void {
     this.deleteByPrefix('dashboard')
   }
 }
@@ -270,13 +270,10 @@ class CacheService {
 let cacheServiceInstance: CacheService | null = null
 
 if (typeof window !== 'undefined') {
-  // @ts-ignore
   if (!window.__cacheService) {
     cacheServiceInstance = new CacheService()
-    // @ts-ignore
     window.__cacheService = cacheServiceInstance
   } else {
-    // @ts-ignore
     cacheServiceInstance = window.__cacheService
   }
 } else {
@@ -285,4 +282,6 @@ if (typeof window !== 'undefined') {
 }
 
 export const cacheService = cacheServiceInstance!
+
+export {}
 

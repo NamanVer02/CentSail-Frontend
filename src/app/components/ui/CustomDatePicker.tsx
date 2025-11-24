@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { FiCalendar, FiFilter } from 'react-icons/fi'
+import { FiFilter } from 'react-icons/fi'
 import { createPortal } from 'react-dom'
 
 interface CustomDatePickerProps {

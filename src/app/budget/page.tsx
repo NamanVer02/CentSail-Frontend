@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { FiTarget, FiDollarSign } from 'react-icons/fi'
+import { FiTarget } from 'react-icons/fi'
 import Button from '@/app/components/ui/Button'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'

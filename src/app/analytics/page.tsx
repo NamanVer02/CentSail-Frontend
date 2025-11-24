@@ -1,8 +1,7 @@
   'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react'
-import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart, FiCalendar } from 'react-icons/fi'
+import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiBarChart } from 'react-icons/fi'
 import { analyticsService } from '@/lib/services/analyticsService'
 import { toast } from '@/lib/utils/toast'
 import { categoryService, Category } from '@/lib/services/categoryService'
@@ -13,7 +12,6 @@ import Header from '@/app/components/Header'
 
 export default function AnalyticsPage() {
   const silkSettings = useSilkSettings()
-  const router = useRouter()
 
   const [summaryData, setSummaryData] = useState<{
     totalIncome: number
@@ -202,7 +200,7 @@ export default function AnalyticsPage() {
                     {savingsRate.savingsRate.toFixed(1)}%
                   </p>
                   <p className="text-sm text-white/60 mb-4">
-                    You're saving ${Math.abs(savingsRate.savingsAmount).toFixed(2)} {savingsRate.savingsAmount >= 0 ? 'per month' : 'in debt'}
+                    You&apos;re saving ${Math.abs(savingsRate.savingsAmount).toFixed(2)} {savingsRate.savingsAmount >= 0 ? 'per month' : 'in debt'}
                   </p>
                   
                   <div className="w-full bg-white/10 rounded-full h-3">

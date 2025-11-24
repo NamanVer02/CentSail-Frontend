@@ -3,17 +3,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import RadarChart from '@/app/components/ui/RadarChart'
-import { FiGlobe, FiShoppingCart, FiSend, FiWatch, FiAward, FiAlertTriangle, FiFilm, FiShoppingBag, FiTrendingUp, FiPlus, FiRepeat, FiBarChart2, FiTarget, FiArrowUp, FiArrowDown } from 'react-icons/fi'
+import { FiPlus, FiRepeat, FiBarChart2, FiTarget, FiArrowUp, FiArrowDown } from 'react-icons/fi'
 
-import { entryService } from '@/lib/services/entryService'
+import { entryService, type ListRequest } from '@/lib/services/entryService'
 import { categoryService, Category } from '@/lib/services/categoryService'
 import { analyticsService, CategoryExpenseData } from '@/lib/services/analyticsService'
 import { auth } from '@/lib/config/firebase'
 import TransactionListItem from '@/app/components/TransactionListItem'
-import { getCategoryIcon, getCategoryIconById } from '@/lib/utils/categoryIcons'
+import { getCategoryIcon } from '@/lib/utils/categoryIcons'
 import Silk from '@/components/Silk'
 import { useSilkSettings } from '@/lib/hooks/useSilkSettings'
 import LiquidGlass from '@/components/LiquidGlass'
+import { parseDateValue } from '@/lib/utils/date'
 
 export default function DashboardPage() {
   const silkSettings = useSilkSettings()
@@ -23,33 +24,6 @@ export default function DashboardPage() {
     if (hour < 18) return 'Good Afternoon'
     return 'Good Evening'
   })
-
-  // Helper function to convert Firestore Timestamp or ISO string to Date
-  const parseDate = (dateValue: any): Date | null => {
-    if (!dateValue) return null
-    
-    try {
-      // If it's a Firestore Timestamp object (has seconds and nanos)
-      if (typeof dateValue === 'object' && dateValue.seconds !== undefined) {
-        // Convert seconds to milliseconds and add nanos converted to milliseconds
-        // nanos are in nanoseconds (1e9), so divide by 1e6 to get milliseconds
-        const milliseconds = dateValue.seconds * 1000 + Math.floor((dateValue.nanos || 0) / 1000000)
-        return new Date(milliseconds)
-      }
-      
-      // If it's already a string (ISO format)
-      if (typeof dateValue === 'string') {
-        const date = new Date(dateValue)
-        if (!isNaN(date.getTime())) {
-          return date
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing date:', error)
-    }
-    
-    return null
-  }
 
   // Analytics data for radar chart
   const [analyticsData, setAnalyticsData] = useState<CategoryExpenseData[]>([])
@@ -114,15 +88,16 @@ export default function DashboardPage() {
         if (!uid) {
           try { uid = await waitForAuthUid() } catch { return }
         }
-        const res = await entryService.getEntries({
+        const request: ListRequest = {
           userId: uid,
           page: 1,
           pageSize: 10,
           sortBy: 'date',
           sortOrder: 'desc'
-        })
-        const payload: any = res.data || {}
-        const items: RecentEntry[] = Array.isArray(payload.entries) ? payload.entries : []
+        }
+        const res = await entryService.getEntries(request)
+        const entriesData = res.data?.entries
+        const items: RecentEntry[] = Array.isArray(entriesData) ? entriesData : []
         if (mounted) setRecentTransactions(items)
       } finally {
         setLoadingRecent(false)
@@ -347,7 +322,7 @@ export default function DashboardPage() {
                 date={t.date}
                 categoryIdToCategory={categoryIdToCategory}
                 categoryIdToName={categoryIdToName}
-                parseDate={parseDate}
+                parseDate={parseDateValue}
               />
             ))}
           </div>

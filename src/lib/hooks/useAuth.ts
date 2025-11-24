@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { firebaseAuthService } from '@/lib/services/firebaseAuthService';
-import { SignupRequest, LoginRequest, FirebaseUser, AuthError } from '@/lib/types/auth';
+import { SignupRequest, LoginRequest, FirebaseUser } from '@/lib/types/auth';
 import { authService } from '@/lib/services/authService';
 import { cacheService } from '@/lib/services/cacheService';
 import { sessionService } from '@/lib/services/sessionService';
